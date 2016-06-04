@@ -12,6 +12,7 @@ import (
 type IPRoute struct {
 	CIDR   string
 	Device string
+	Via    string
 }
 
 func (l *IPRoute) String() string {
@@ -57,6 +58,8 @@ func parseIPRoutes(out []byte) (*IPRoutes, error) {
 	//10.244.2.0/24 dev gre-10-244-2-0  scope link
 	//172.17.0.0/16 dev docker0  proto kernel  scope link  src 172.17.0.1
 	//172.20.0.0/19 dev eth0  proto kernel  scope link  src 172.20.30.98
+	// 10.244.1.0/24 via 172.20.21.42 dev eth0
+	// 10.244.2.0/24 via 172.20.21.41 dev eth0
 
 	var routes []*IPRoute
 
@@ -95,6 +98,8 @@ func parseIPRoutes(out []byte) (*IPRoutes, error) {
 			switch key {
 			case "dev":
 				route.Device = value
+			case "via":
+				route.Via = value
 			}
 		}
 
@@ -109,7 +114,51 @@ func parseIPRoutes(out []byte) (*IPRoutes, error) {
 
 }
 
-func (i *IPRoutes) EnsureRoute(cidr string, device string) error {
+func (i *IPRoutes) EnsureRouteViaIP(cidr string, via string) error {
+	var existing *IPRoute
+	for _, r := range i.Routes {
+		if r.CIDR == cidr {
+			existing = r
+			break
+		}
+	}
+
+	if existing != nil {
+		delete := false
+		if existing.Via != via {
+			glog.Infof("Route exists, but via does not match: %q vs %q", existing.Via, via)
+			delete = true
+		}
+
+		if delete {
+			glog.Infof("Deleting route, as settings not correct")
+			err := i.DeleteRoute(existing)
+			if err != nil {
+				return fmt.Errorf("error deleting existing route: %v", err)
+			}
+			existing = nil
+		}
+	}
+
+	if existing == nil {
+		glog.Infof("Creating route: %s via %s", cidr, via)
+
+		argv := []string{"ip", "route", "add", cidr, "via", via}
+		humanArgv := strings.Join(argv, " ")
+
+		glog.V(2).Infof("Running %q", humanArgv)
+		cmd := exec.Command(argv[0], argv[1:]...)
+
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("error running %q: %v: %q", humanArgv, err, string(out))
+		}
+	}
+
+	return nil
+}
+
+func (i *IPRoutes) EnsureRouteToDevice(cidr string, device string) error {
 	var existing *IPRoute
 	for _, r := range i.Routes {
 		if r.CIDR == cidr {
@@ -127,7 +176,7 @@ func (i *IPRoutes) EnsureRoute(cidr string, device string) error {
 
 		if delete {
 			glog.Infof("Deleting route, as settings not correct")
-			err := i.DeleteRoute(existing.CIDR, existing.Device)
+			err := i.DeleteRoute(existing)
 			if err != nil {
 				return fmt.Errorf("error deleting existing route: %v", err)
 			}
@@ -153,11 +202,18 @@ func (i *IPRoutes) EnsureRoute(cidr string, device string) error {
 	return nil
 }
 
-func (i *IPRoutes) DeleteRoute(cidr string, device string) error {
+func (i *IPRoutes) DeleteRoute(r *IPRoute) error {
 	{
-		glog.Infof("Deleting routing: %s %s", cidr, device)
+		glog.Infof("Deleting route: %s")
 
-		argv := []string{"ip", "route", "delete", cidr, "dev", device}
+		argv := []string{"ip", "route", "delete", r.CIDR}
+		if r.Device != "" {
+			argv = append(argv, "dev", r.Device)
+		}
+		if r.Via != "" {
+			argv = append(argv, "via", r.Device)
+		}
+
 		humanArgv := strings.Join(argv, " ")
 
 		glog.V(2).Infof("Running %q", humanArgv)

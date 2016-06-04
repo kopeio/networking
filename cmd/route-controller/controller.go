@@ -25,8 +25,11 @@ var (
 
 // routeController watches the kubernetes api and adds/removes DNS entries
 type routeController struct {
-	selfNodeName string
-	provider     routingproviders.RoutingProvider
+	selfNodeName   string
+	selfMachineID  string
+	selfSystemUUID string
+	selfBootID     string
+	provider       routingproviders.RoutingProvider
 
 	client         *client.Client
 	nodeController *framework.Controller
@@ -48,6 +51,9 @@ type routeController struct {
 func newRouteController(kubeClient *client.Client,
 	resyncPeriod time.Duration,
 	selfNodeName string,
+	selfBootID string,
+	selfSystemUUID string,
+	selfMachineID string,
 	provider routingproviders.RoutingProvider) (*routeController, error) {
 
 	eventBroadcaster := record.NewBroadcaster()
@@ -55,11 +61,14 @@ func newRouteController(kubeClient *client.Client,
 	eventBroadcaster.StartRecordingToSink(kubeClient.Events(""))
 
 	c := routeController{
-		selfNodeName: selfNodeName,
-		provider:     provider,
-		client:       kubeClient,
-		stopCh:       make(chan struct{}),
-		recorder:     eventBroadcaster.NewRecorder(api.EventSource{Component: "loadbalancer-controller"}),
+		selfNodeName:   selfNodeName,
+		selfBootID:     selfBootID,
+		selfSystemUUID: selfSystemUUID,
+		selfMachineID:  selfMachineID,
+		provider:       provider,
+		client:         kubeClient,
+		stopCh:         make(chan struct{}),
+		recorder:       eventBroadcaster.NewRecorder(api.EventSource{Component: "loadbalancer-controller"}),
 	}
 
 	c.syncQueue = NewTaskQueue(c.sync)
@@ -123,19 +132,62 @@ func (c *routeController) sync(key string) error {
 	}
 
 	var me *api.Node
-	for i := range nodeList.Items {
-		node := &nodeList.Items[i]
-		if node.Name == c.selfNodeName {
-			if me != nil {
-				glog.Fatalf("Found multiple nodes with name: %q", c.selfNodeName)
+	if c.selfBootID != "" {
+		for i := range nodeList.Items {
+			node := &nodeList.Items[i]
+			if node.Status.NodeInfo.BootID == c.selfBootID {
+				if me != nil {
+					glog.Fatalf("Found multiple nodes with boot-id: %q (%q and %q)", c.selfBootID, node.Name, me.Name)
+				}
+				me = node
 			}
-			me = node
 		}
+		if me == nil {
+			return fmt.Errorf("unable to find self-node boot-id: %q", c.selfBootID)
+		}
+	} else if c.selfSystemUUID != "" {
+		for i := range nodeList.Items {
+			node := &nodeList.Items[i]
+			if node.Status.NodeInfo.SystemUUID == c.selfSystemUUID {
+				if me != nil {
+					glog.Fatalf("Found multiple nodes with system-uuid: %q (%q and %q)", c.selfSystemUUID, node.Name, me.Name)
+				}
+				me = node
+			}
+		}
+		if me == nil {
+			return fmt.Errorf("unable to find self-node system-uuid: %q", c.selfSystemUUID)
+		}
+	} else if c.selfMachineID != "" {
+		for i := range nodeList.Items {
+			node := &nodeList.Items[i]
+			if node.Status.NodeInfo.MachineID == c.selfMachineID {
+				if me != nil {
+					glog.Fatalf("Found multiple nodes with machineid: %q (%q and %q)", c.selfMachineID, node.Name, me.Name)
+				}
+				me = node
+			}
+		}
+		if me == nil {
+			return fmt.Errorf("unable to find self-node machine-id: %q", c.selfMachineID)
+		}
+	} else if c.selfNodeName != "" {
+		for i := range nodeList.Items {
+			node := &nodeList.Items[i]
+			if node.Name == c.selfNodeName {
+				if me != nil {
+					glog.Fatalf("Found multiple nodes with name: %q (%q and %q)", c.selfNodeName, node.Name, me.Name)
+				}
+				me = node
+			}
+		}
+		if me == nil {
+			return fmt.Errorf("unable to find self-node name: %q", c.selfNodeName)
+		}
+	} else {
+		return fmt.Errorf("must set either node-name or machine-id")
 	}
 
-	if me == nil {
-		return fmt.Errorf("unable to find self-node name: %q", c.selfNodeName)
-	}
 	err = c.provider.EnsureCIDRs(me, nodeList.Items)
 	if err != nil {
 		return fmt.Errorf("error while trying to create names: %v", err)

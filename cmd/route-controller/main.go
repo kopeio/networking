@@ -31,9 +31,12 @@ import (
 
 	"github.com/kopeio/route-controller/pkg/routecontroller/routingproviders"
 	"github.com/kopeio/route-controller/pkg/routecontroller/routingproviders/grerouting"
+	"github.com/kopeio/route-controller/pkg/routecontroller/routingproviders/layer2routing"
 	"github.com/kopeio/route-controller/pkg/routecontroller/routingproviders/mockrouting"
+	"io/ioutil"
 	"k8s.io/kubernetes/pkg/client/unversioned"
 	kubectl_util "k8s.io/kubernetes/pkg/kubectl/cmd/util"
+	"strings"
 )
 
 const (
@@ -54,12 +57,16 @@ var (
 
 	//kubeConfig = flags.String("kubeconfig", "", "Path to kubeconfig file with authorization information.")
 
-	nodeName   = flags.String("node-name", "", "name of this node")
-	providerID = flags.String("provider", "gre", "route backend to use")
+	nodeName       = flags.String("node-name", "", "name of this node")
+	machineIDPath  = flags.String("machine-id", "", "path to file containing machine id (as set in node status)")
+	systemUUIDPath = flags.String("system-uuid", "", "path to file containing system-uuid (as set in node status)")
+	bootIDPath     = flags.String("boot-id", "", "path to file containing boot-id (as set in node status)")
+	providerID     = flags.String("provider", "gre", "route backend to use")
 
-	inCluster = flags.Bool("running-in-cluster", true,
-		`Optional, if this controller is running in a kubernetes cluster, use the
-		 pod secrets for creating a Kubernetes client.`)
+	// I can't figure out how to get a serviceaccount in a manifest-controlled pod
+	//inCluster = flags.Bool("running-in-cluster", true,
+	//	`Optional, if this controller is running in a kubernetes cluster, use the
+	//	 pod secrets for creating a Kubernetes client.`)
 
 	profiling = flags.Bool("profiling", true, `Enable profiling via web interface host:port/debug/pprof/`)
 )
@@ -74,20 +81,50 @@ func main() {
 	glog.Infof("Using build: %v - %v", gitRepo, version)
 
 	var err error
-	if *inCluster {
-		kubeClient, err = unversioned.NewInCluster()
-	} else {
-		config, connErr := clientConfig.ClientConfig()
-		if connErr != nil {
-			glog.Fatalf("error connecting to the client: %v", err)
-		}
-		kubeClient, err = unversioned.New(config)
+	//if *inCluster {
+	//	kubeClient, err = unversioned.NewInCluster()
+	//} else {
+	config, connErr := clientConfig.ClientConfig()
+	if connErr != nil {
+		glog.Fatalf("error connecting to the client: %v", err)
 	}
+	kubeClient, err = unversioned.New(config)
+	//}
 	if err != nil {
 		glog.Fatalf("failed to create client: %v", err)
 	}
 
-	if *nodeName == "" {
+	machineID := ""
+	if *machineIDPath != "" {
+		b, err := ioutil.ReadFile(*machineIDPath)
+		if err != nil {
+			glog.Fatalf("error reading machine-id file %q: %v", *machineIDPath, err)
+		}
+		machineID = string(b)
+		machineID = strings.TrimSpace(machineID)
+	}
+
+	systemUUID := ""
+	if *systemUUIDPath != "" {
+		b, err := ioutil.ReadFile(*systemUUIDPath)
+		if err != nil {
+			glog.Fatalf("error reading system-uuid file %q: %v", *systemUUIDPath, err)
+		}
+		systemUUID = string(b)
+		systemUUID = strings.TrimSpace(systemUUID)
+	}
+
+	bootID := ""
+	if *bootIDPath != "" {
+		b, err := ioutil.ReadFile(*bootIDPath)
+		if err != nil {
+			glog.Fatalf("error reading boot-id file %q: %v", *bootIDPath, err)
+		}
+		bootID = string(b)
+		bootID = strings.TrimSpace(bootID)
+	}
+
+	if *nodeName == "" && *machineIDPath == "" && *systemUUIDPath == "" && *bootIDPath == "" {
 		hostname, err := os.Hostname()
 		if err != nil {
 			glog.Fatalf("error getting hostname: %v", err)
@@ -98,6 +135,8 @@ func main() {
 
 	var provider routingproviders.RoutingProvider
 	switch *providerID {
+	case "layer2":
+		provider, err = layer2routing.NewLayer2RoutingProvider()
 	case "mock":
 		provider, err = mockrouting.NewMockRoutingProvider()
 	case "gre":
@@ -110,7 +149,7 @@ func main() {
 		glog.Fatalf("failed to build provider %q: %v", *providerID, err)
 	}
 
-	c, err := newRouteController(kubeClient, *resyncPeriod, *nodeName, provider)
+	c, err := newRouteController(kubeClient, *resyncPeriod, *nodeName, bootID, systemUUID, machineID, provider)
 	if err != nil {
 		glog.Fatalf("%v", err)
 	}

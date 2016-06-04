@@ -1,4 +1,4 @@
-package grerouting
+package layer2routing
 
 import (
 	"fmt"
@@ -7,29 +7,23 @@ import (
 	"github.com/kopeio/route-controller/pkg/routecontroller/routingproviders"
 	"k8s.io/kubernetes/pkg/api"
 	"net"
-	"strings"
 )
 
-type GreRoutingProvider struct {
+type Layer2RoutingProvider struct {
 }
 
-var _ routingproviders.RoutingProvider = &GreRoutingProvider{}
+var _ routingproviders.RoutingProvider = &Layer2RoutingProvider{}
 
-func NewGreRoutingProvider() (*GreRoutingProvider, error) {
-	p := &GreRoutingProvider{}
+func NewLayer2RoutingProvider() (*Layer2RoutingProvider, error) {
+	p := &Layer2RoutingProvider{}
 	return p, nil
 }
 
-func (p *GreRoutingProvider) EnsureCIDRs(me *api.Node, allNodes []api.Node) error {
+func (p *Layer2RoutingProvider) EnsureCIDRs(me *api.Node, allNodes []api.Node) error {
 	meInternalIP := routecontroller.FindInternalIPAddress(me)
 	if meInternalIP == "" {
 		glog.Infof("self-node does not yet have internalIP; delaying configuration")
 		return nil
-	}
-
-	links, err := routecontroller.QueryIPLinks()
-	if err != nil {
-		return err
 	}
 
 	routes, err := routecontroller.QueryIPRoutes()
@@ -45,19 +39,12 @@ func (p *GreRoutingProvider) EnsureCIDRs(me *api.Node, allNodes []api.Node) erro
 			return fmt.Errorf("error parsing PodCidr %q: %v", remoteCIDRString, err)
 		}
 
-		name := "gre-" + strings.Replace(remoteCIDR.IP.String(), ".", "-", -1)
-
-		err = links.EnsureGRETunnel(name, destIP, meInternalIP)
+		err = routes.EnsureRouteViaIP(remoteCIDR.String(), destIP)
 		if err != nil {
 			return err
 		}
 
-		err = routes.EnsureRouteToDevice(remoteCIDR.String(), name)
-		if err != nil {
-			return err
-		}
-
-		// TODO: Delete any extra tunnels
+		// TODO: Delete any extra routes?
 	}
 
 	return nil
