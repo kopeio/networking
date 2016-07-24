@@ -135,7 +135,6 @@ func main() {
 		*nodeName = hostname
 	}
 
-	var udpEncapListener *ipsecrouting.UDPEncapListener
 	var provider routingproviders.RoutingProvider
 	switch *providerID {
 	case "layer2":
@@ -145,14 +144,6 @@ func main() {
 	case "gre":
 		provider, err = grerouting.NewGreRoutingProvider()
 	case "ipsec":
-		// TODO: Refactor
-		port := 4500
-		glog.Infof("Creating encap listener on port %d", port)
-		l, err := ipsecrouting.NewUDPEncapListener(port)
-		if err != nil {
-			glog.Fatalf("error creating UDP encapsulation listener on port %d: %v", port, err)
-		}
-		udpEncapListener = l
 		provider, err = ipsecrouting.NewIpsecRoutingProvider()
 
 	default:
@@ -178,10 +169,6 @@ func main() {
 		time.Sleep(30 * time.Second)
 	}
 
-	if udpEncapListener != nil {
-		udpEncapListener.Close()
-		udpEncapListener = nil
-	}
 }
 
 //func registerHandlers(c *routeController) {

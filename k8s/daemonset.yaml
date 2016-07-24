@@ -27,3 +27,11 @@ spec:
           image: kope/route-controller
           name: kope-routing
           command: [ "/usr/bin/route-controller", "--provider=ipsec", "--system-uuid", "/sys/class/dmi/id/product_uuid" ]
+          volumeMounts:
+            - name: lib-modules
+              mountPath: /lib/modules
+              readOnly: true
+      volumes:
+        - name: lib-modules
+          hostPath:
+            path: /lib/modules

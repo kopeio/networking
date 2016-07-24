@@ -12,6 +12,7 @@ import (
 	"github.com/kopeio/route-controller/pkg/routecontroller/routingproviders"
 	"github.com/vishvananda/netlink"
 	"k8s.io/kubernetes/pkg/api"
+	"os/exec"
 )
 
 const (
@@ -38,13 +39,58 @@ var noLimits = netlink.XfrmStateLimits{
 }
 
 type IpsecRoutingProvider struct {
+	udpEncapListener *UDPEncapListener
 }
 
 var _ routingproviders.RoutingProvider = &IpsecRoutingProvider{}
 
 func NewIpsecRoutingProvider() (*IpsecRoutingProvider, error) {
+	err := doModprobe()
+	if err != nil {
+		return nil, err
+	}
+
 	p := &IpsecRoutingProvider{}
+
+	// TODO: Refactor
+	port := 4500
+	glog.Infof("Creating encap listener on port %d", port)
+	p.udpEncapListener, err = NewUDPEncapListener(port)
+	if err != nil {
+		return nil, fmt.Errorf("error creating UDP encapsulation listener on port %d: %v", port, err)
+	}
 	return p, nil
+}
+
+func (p *IpsecRoutingProvider) Close() error {
+	if p.udpEncapListener != nil {
+		err := p.udpEncapListener.Close()
+		if err != nil {
+			return err
+		}
+		p.udpEncapListener = nil
+	}
+	return nil
+}
+
+func doModprobe() error {
+	modules := []string{"af_key",
+		"ah4",
+		"ipcomp",
+		"esp",
+		"xfrm4",
+		"xfrm_tunnel",
+		"tunnel"}
+	glog.Infof("Doing modprobe for modules %v", modules)
+	out, err := exec.Command("/sbin/modprobe", modules...).CombinedOutput()
+	outString := string(out)
+	if err != nil {
+		return fmt.Errorf("modprobe to load ipsec modules failed (%v): %s", err, outString)
+	}
+	if outString != "" {
+		glog.Infof("Output from modprobe:\n%s", outString)
+	}
+	return nil
 }
 
 func (p *IpsecRoutingProvider) EnsureCIDRs(me *api.Node, allNodes []api.Node) error {
