@@ -1,0 +1,81 @@
+NODE1=172.20.114.235
+CIDR1=100.96.2.0/24
+
+NODE2=172.20.131.222
+CIDR2=100.96.0.0/24
+
+# INstall ipsect tools
+apt-get update
+
+apt-get install --yes  ipsec-tools
+
+
+# Install the ESP UDP agent/whatever on the nodes and run them
+# Start it
+./test-esp-udp
+
+(Does this need a modprobe or something - doesn't work at first??)
+
+
+// Tunnel mode
+
+#node1 ${FAKE1} ${NODE1}
+
+setkey -F && setkey -FP
+
+
+
+ME=${NODE1}
+REMOTE=${NODE2}
+ENCAP=esp-udp
+ENCRYPT_ALG=aes-ctr
+
+setkey -F && setkey -FP
+setkey -c <<EOF
+add ${NODE1} ${NODE2} ah 24500 -m tunnel -A hmac-sha1 "12345678901234567890";
+add ${NODE1} ${NODE2} ${ENCAP} 24501 -m tunnel -E ${ENCRYPT_ALG} "12345678901212345678";
+add ${NODE2} ${NODE1} ah 24502 -m tunnel  -A hmac-sha1 "12345678901234567890";
+add ${NODE2} ${NODE1} ${ENCAP} 24503 -m tunnel -E ${ENCRYPT_ALG} "12345678901212345678";
+
+spdadd 0.0.0.0/0 0.0.0.0/0[4500] udp -P out prio 100 none;
+spdadd 0.0.0.0/0 0.0.0.0/0[4500] udp -P in prio 100 none;
+spdadd 0.0.0.0/0 0.0.0.0/0[4500] udp -P in prio 100 none;
+spdadd 0.0.0.0/0 0.0.0.0/0[4500] udp -P out prio 100 none;
+
+spdadd ${CIDR1} ${CIDR2} any -P out ipsec esp/tunnel/${NODE1}-${NODE2}/require;
+spdadd ${CIDR2} ${CIDR1} any -P in ipsec esp/tunnel/${NODE2}-${NODE1}/require;
+
+EOF
+setkey -D
+setkey -DP
+
+
+
+#node2 ${FAKE2} ${NODE2}
+
+
+ME=${NODE2}
+REMOTE=${NODE1}
+ENCAP=esp-udp
+ENCRYPT_ALG=aes-ctr
+
+# TODO: Should ah be -m tunnel or not?  both seem to work?
+
+setkey -F && setkey -FP
+setkey -c <<EOF
+add ${NODE1} ${NODE2} ah 24500 -m tunnel -A hmac-sha1 "12345678901234567890";
+add ${NODE1} ${NODE2} ${ENCAP} 24501 -m tunnel -E ${ENCRYPT_ALG} "12345678901212345678";
+add ${NODE2} ${NODE1} ah 24502 -m tunnel  -A hmac-sha1 "12345678901234567890";
+add ${NODE2} ${NODE1} ${ENCAP} 24503 -m tunnel -E ${ENCRYPT_ALG} "12345678901212345678";
+
+
+spdadd 0.0.0.0/0 0.0.0.0/0[4500] udp -P out prio 100 none;
+spdadd 0.0.0.0/0 0.0.0.0/0[4500] udp -P in prio 100 none;
+
+
+spdadd ${CIDR1} ${CIDR2} any -P in ipsec esp/tunnel/${NODE1}-${NODE2}/require;
+spdadd ${CIDR2} ${CIDR1} any -P out ipsec esp/tunnel/${NODE2}-${NODE1}/require;
+
+EOF
+setkey -D
+setkey -DP

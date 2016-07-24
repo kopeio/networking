@@ -1,7 +1,6 @@
 all: image
 
-code:
-	glide install --strip-vendor --strip-vcs
+route-controller:
 	go install github.com/kopeio/route-controller/cmd/route-controller
 
 test:
@@ -22,3 +21,6 @@ image: build-in-docker
 
 push: image
 	docker push kope/route-controller:latest
+
+copydeps:
+	rsync -avz _vendor/ vendor/ --exclude vendor/

@@ -17,10 +17,7 @@ limitations under the License.
 package main
 
 import (
-	"flag"
-	"fmt"
-	"net/http"
-	"net/http/pprof"
+	goflag "flag"
 	"os"
 	"os/signal"
 	"syscall"
@@ -31,6 +28,7 @@ import (
 
 	"github.com/kopeio/route-controller/pkg/routecontroller/routingproviders"
 	"github.com/kopeio/route-controller/pkg/routecontroller/routingproviders/grerouting"
+	"github.com/kopeio/route-controller/pkg/routecontroller/routingproviders/ipsecrouting"
 	"github.com/kopeio/route-controller/pkg/routecontroller/routingproviders/layer2routing"
 	"github.com/kopeio/route-controller/pkg/routecontroller/routingproviders/mockrouting"
 	"io/ioutil"
@@ -39,9 +37,9 @@ import (
 	"strings"
 )
 
-const (
-	healthPort = 10249
-)
+//const (
+//	healthPort = 10249
+//)
 
 var (
 	// value overwritten during build. This can be used to resolve issues.
@@ -53,7 +51,7 @@ var (
 	resyncPeriod = flags.Duration("sync-period", 30*time.Second,
 		`Relist and confirm cloud resources this often.`)
 
-	healthzPort = flags.Int("healthz-port", healthPort, "port for healthz endpoint.")
+	//healthzPort = flags.Int("healthz-port", healthPort, "port for healthz endpoint.")
 
 	//kubeConfig = flags.String("kubeconfig", "", "Path to kubeconfig file with authorization information.")
 
@@ -73,8 +71,12 @@ var (
 
 func main() {
 	var kubeClient *unversioned.Client
-	flags.AddGoFlagSet(flag.CommandLine)
+
+	flags.AddGoFlagSet(goflag.CommandLine)
 	clientConfig := kubectl_util.DefaultClientConfig(flags)
+
+	// Workaround for glog warning
+	goflag.CommandLine.Parse([]string{})
 
 	flags.Parse(os.Args)
 
@@ -133,6 +135,7 @@ func main() {
 		*nodeName = hostname
 	}
 
+	var udpEncapListener *ipsecrouting.UDPEncapListener
 	var provider routingproviders.RoutingProvider
 	switch *providerID {
 	case "layer2":
@@ -141,6 +144,17 @@ func main() {
 		provider, err = mockrouting.NewMockRoutingProvider()
 	case "gre":
 		provider, err = grerouting.NewGreRoutingProvider()
+	case "ipsec":
+		// TODO: Refactor
+		port := 4500
+		glog.Infof("Creating encap listener on port %d", port)
+		l, err := ipsecrouting.NewUDPEncapListener(port)
+		if err != nil {
+			glog.Fatalf("error creating UDP encapsulation listener on port %d: %v", port, err)
+		}
+		udpEncapListener = l
+		provider, err = ipsecrouting.NewIpsecRoutingProvider()
+
 	default:
 		glog.Fatalf("provider not known: %q", *providerID)
 	}
@@ -154,7 +168,7 @@ func main() {
 		glog.Fatalf("%v", err)
 	}
 
-	go registerHandlers(c)
+	//go registerHandlers(c)
 	go handleSigterm(c)
 
 	c.Run()
@@ -163,34 +177,39 @@ func main() {
 		glog.Infof("Handled quit, awaiting pod deletion")
 		time.Sleep(30 * time.Second)
 	}
+
+	if udpEncapListener != nil {
+		udpEncapListener.Close()
+		udpEncapListener = nil
+	}
 }
 
-func registerHandlers(c *routeController) {
-	mux := http.NewServeMux()
-	// TODO: healthz
-	//healthz.InstallHandler(mux, lbc.nginx)
-
-	http.HandleFunc("/build", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "build: %v - %v", gitRepo, version)
-	})
-
-	http.HandleFunc("/stop", func(w http.ResponseWriter, r *http.Request) {
-		c.Stop()
-	})
-
-	if *profiling {
-		mux.HandleFunc("/debug/pprof/", pprof.Index)
-		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	}
-
-	server := &http.Server{
-		Addr:    fmt.Sprintf(":%v", *healthzPort),
-		Handler: mux,
-	}
-	glog.Fatal(server.ListenAndServe())
-}
+//func registerHandlers(c *routeController) {
+//	mux := http.NewServeMux()
+//	// TODO: healthz
+//	//healthz.InstallHandler(mux, lbc.nginx)
+//
+//	http.HandleFunc("/build", func(w http.ResponseWriter, r *http.Request) {
+//		w.WriteHeader(http.StatusOK)
+//		fmt.Fprint(w, "build: %v - %v", gitRepo, version)
+//	})
+//
+//	http.HandleFunc("/stop", func(w http.ResponseWriter, r *http.Request) {
+//		c.Stop()
+//	})
+//
+//	if *profiling {
+//		mux.HandleFunc("/debug/pprof/", pprof.Index)
+//		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+//		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+//	}
+//
+//	server := &http.Server{
+//		Addr:    fmt.Sprintf(":%v", *healthzPort),
+//		Handler: mux,
+//	}
+//	glog.Fatal(server.ListenAndServe())
+//}
 
 func handleSigterm(c *routeController) {
 	signalChan := make(chan os.Signal, 1)
