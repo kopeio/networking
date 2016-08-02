@@ -1,0 +1,35 @@
+modprobe af_key ah4 ipcomp esp xfrm4 xfrm_tunnel tunnel
+
+Switch to our simpler watcher, and only watch the properties we care about
+  * Stop watching health checks!!
+
+Why did ELB not work with 100 instances?
+
+Need to set up keys correctly
+
+Figure out how to set up SPI
+ * Will the XOR trick work
+
+Does k8s fold similar watches to reduce resources somehow?
+
+What is the primary key on rules
+
+Check behaviour with thousands of rules
+
+Check configuration:
+ * should we share keys?
+
+modprobe not right
+
+
+[  130.517341] af_key: unknown parameter 'ah4' ignored
+[  130.520953] af_key: unknown parameter 'ipcomp' ignored
+[  130.523711] af_key: unknown parameter 'esp' ignored
+[  130.526224] af_key: unknown parameter 'xfrm4' ignored
+[  130.528829] af_key: unknown parameter 'xfrm_tunnel' ignored
+[  130.531654] af_key: unknown parameter 'tunnel' ignored
+
+
+Can we get rid of the per-address routes?  Probably needed for...
+  * host networking
+  * nodeport services

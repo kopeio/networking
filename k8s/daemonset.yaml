@@ -21,7 +21,7 @@ spec:
       containers:
         - resources:
             requests:
-              cpu: 0.15
+              cpu: 0.20
           securityContext:
             privileged: true
           image: kope/route-controller

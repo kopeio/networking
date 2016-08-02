@@ -18,23 +18,21 @@ package main
 
 import (
 	goflag "flag"
+	"io/ioutil"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/kopeio/route-controller/pkg/routing"
+	"github.com/kopeio/route-controller/pkg/routing/ipsecrouting"
+	"github.com/kopeio/route-controller/pkg/watchers"
 	"github.com/spf13/pflag"
-
-	"github.com/kopeio/route-controller/pkg/routecontroller/routingproviders"
-	"github.com/kopeio/route-controller/pkg/routecontroller/routingproviders/grerouting"
-	"github.com/kopeio/route-controller/pkg/routecontroller/routingproviders/ipsecrouting"
-	"github.com/kopeio/route-controller/pkg/routecontroller/routingproviders/layer2routing"
-	"github.com/kopeio/route-controller/pkg/routecontroller/routingproviders/mockrouting"
-	"io/ioutil"
-	"k8s.io/kubernetes/pkg/client/unversioned"
+	"k8s.io/kubernetes/pkg/api/v1"
+	client "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_3/typed/core/v1"
 	kubectl_util "k8s.io/kubernetes/pkg/kubectl/cmd/util"
-	"strings"
 )
 
 //const (
@@ -70,79 +68,86 @@ var (
 )
 
 func main() {
-	var kubeClient *unversioned.Client
+	// Trick to avoid 'logging before flag.Parse' warning
+	goflag.CommandLine.Parse([]string{})
+
+	goflag.Set("logtostderr", "true")
 
 	flags.AddGoFlagSet(goflag.CommandLine)
 	clientConfig := kubectl_util.DefaultClientConfig(flags)
-
-	// Workaround for glog warning
-	goflag.CommandLine.Parse([]string{})
 
 	flags.Parse(os.Args)
 
 	glog.Infof("Using build: %v - %v", gitRepo, version)
 
-	var err error
-	//if *inCluster {
-	//	kubeClient, err = unversioned.NewInCluster()
-	//} else {
-	config, connErr := clientConfig.ClientConfig()
-	if connErr != nil {
-		glog.Fatalf("error connecting to the client: %v", err)
-	}
-	kubeClient, err = unversioned.New(config)
-	//}
+	config, err := clientConfig.ClientConfig()
 	if err != nil {
-		glog.Fatalf("failed to create client: %v", err)
+		glog.Errorf("error building client configuration: %v", err)
+		os.Exit(1)
 	}
 
-	machineID := ""
+	kubeClient, err := client.NewForConfig(config)
+	if err != nil {
+		glog.Fatalf("error building REST client: %v", err)
+	}
+
+	var matcher func(node *v1.Node) bool
 	if *machineIDPath != "" {
 		b, err := ioutil.ReadFile(*machineIDPath)
 		if err != nil {
 			glog.Fatalf("error reading machine-id file %q: %v", *machineIDPath, err)
 		}
-		machineID = string(b)
+		machineID := string(b)
 		machineID = strings.TrimSpace(machineID)
-	}
 
-	systemUUID := ""
-	if *systemUUIDPath != "" {
+		matcher = func(node *v1.Node) bool {
+			return node.Status.NodeInfo.MachineID == machineID
+		}
+	} else if *systemUUIDPath != "" {
 		b, err := ioutil.ReadFile(*systemUUIDPath)
 		if err != nil {
 			glog.Fatalf("error reading system-uuid file %q: %v", *systemUUIDPath, err)
 		}
-		systemUUID = string(b)
+		systemUUID := string(b)
 		systemUUID = strings.TrimSpace(systemUUID)
-	}
-
-	bootID := ""
-	if *bootIDPath != "" {
+		matcher = func(node *v1.Node) bool {
+			return node.Status.NodeInfo.SystemUUID == systemUUID
+		}
+	} else if *bootIDPath != "" {
 		b, err := ioutil.ReadFile(*bootIDPath)
 		if err != nil {
 			glog.Fatalf("error reading boot-id file %q: %v", *bootIDPath, err)
 		}
-		bootID = string(b)
+		bootID := string(b)
 		bootID = strings.TrimSpace(bootID)
-	}
-
-	if *nodeName == "" && *machineIDPath == "" && *systemUUIDPath == "" && *bootIDPath == "" {
-		hostname, err := os.Hostname()
-		if err != nil {
-			glog.Fatalf("error getting hostname: %v", err)
+		matcher = func(node *v1.Node) bool {
+			return node.Status.NodeInfo.BootID == bootID
 		}
-		glog.Infof("Using hostname as node name: %q", hostname)
-		*nodeName = hostname
+	} else {
+		matchNodeName := *nodeName
+		if matchNodeName == "" {
+			hostname, err := os.Hostname()
+			if err != nil {
+				glog.Fatalf("error getting hostname: %v", err)
+			}
+			glog.Infof("Using hostname as node name: %q", hostname)
+			matchNodeName = hostname
+		}
+		matcher = func(node *v1.Node) bool {
+			return node.Name == matchNodeName
+		}
 	}
 
-	var provider routingproviders.RoutingProvider
+	nodeMap := routing.NewNodeMap(matcher)
+
+	var provider routing.Provider
 	switch *providerID {
-	case "layer2":
-		provider, err = layer2routing.NewLayer2RoutingProvider()
-	case "mock":
-		provider, err = mockrouting.NewMockRoutingProvider()
-	case "gre":
-		provider, err = grerouting.NewGreRoutingProvider()
+	//case "layer2":
+	//	provider, err = layer2routing.NewLayer2RoutingProvider()
+	//case "mock":
+	//	provider, err = mockrouting.NewMockRoutingProvider()
+	//case "gre":
+	//	provider, err = grerouting.NewGreRoutingProvider()
 	case "ipsec":
 		provider, err = ipsecrouting.NewIpsecRoutingProvider()
 
@@ -154,15 +159,24 @@ func main() {
 		glog.Fatalf("failed to build provider %q: %v", *providerID, err)
 	}
 
-	c, err := newRouteController(kubeClient, *resyncPeriod, *nodeName, bootID, systemUUID, machineID, provider)
-	if err != nil {
-		glog.Fatalf("%v", err)
-	}
+	//c, err := newRouteController(kubeClient, *resyncPeriod, *nodeName, bootID, systemUUID, machineID, provider)
+	//if err != nil {
+	//	glog.Fatalf("%v", err)
+	//}
 
+	c, err := watchers.NewNodeController(kubeClient, nodeMap)
+	if err != nil {
+		glog.Fatalf("Failed to build node controller: %v", err)
+	}
+	go c.Run()
+
+	rc, err := routing.NewController(nodeMap, provider)
+	if err != nil {
+		glog.Fatalf("Failed to build routing controller: %v", err)
+	}
+	go rc.Run()
 	//go registerHandlers(c)
 	go handleSigterm(c)
-
-	c.Run()
 
 	for {
 		glog.Infof("Handled quit, awaiting pod deletion")
@@ -198,7 +212,7 @@ func main() {
 //	glog.Fatal(server.ListenAndServe())
 //}
 
-func handleSigterm(c *routeController) {
+func handleSigterm(c *watchers.NodeController) {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGTERM)
 	<-signalChan

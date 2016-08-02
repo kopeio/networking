@@ -9,9 +9,8 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/kopeio/route-controller/pkg/routecontroller"
-	"github.com/kopeio/route-controller/pkg/routecontroller/routingproviders"
+	"github.com/kopeio/route-controller/pkg/routing"
 	"github.com/vishvananda/netlink"
-	"k8s.io/kubernetes/pkg/api"
 	"os/exec"
 )
 
@@ -40,9 +39,11 @@ var noLimits = netlink.XfrmStateLimits{
 
 type IpsecRoutingProvider struct {
 	udpEncapListener *UDPEncapListener
+
+	lastVersionApplied uint64
 }
 
-var _ routingproviders.RoutingProvider = &IpsecRoutingProvider{}
+var _ routing.Provider = &IpsecRoutingProvider{}
 
 func NewIpsecRoutingProvider() (*IpsecRoutingProvider, error) {
 	err := doModprobe()
@@ -93,24 +94,31 @@ func doModprobe() error {
 	return nil
 }
 
-func (p *IpsecRoutingProvider) EnsureCIDRs(me *api.Node, allNodes []api.Node) error {
-	meNodeNumeral, err := computeNodeNumeral(me.Spec.PodCIDR)
+func (p *IpsecRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
+	if p.lastVersionApplied != 0 && nodeMap.IsVersion(p.lastVersionApplied) {
+		return nil
+	}
+
+	me, allNodes, version := nodeMap.Snapshot()
+
+	if me == nil {
+		return fmt.Errorf("Cannot find local node")
+	}
+
+	if me.PodCIDR == nil {
+		return fmt.Errorf("No CIDR assigned to local node; cannot configure tunnels")
+	}
+
+	if me.Address == nil {
+		return fmt.Errorf("No Address assigned to local node; cannot configure tunnels")
+	}
+
+	meNodeNumeral, err := computeNodeNumeral(me.PodCIDR)
 	if err != nil {
 		return err
 	}
 
-	meInternalIP := routecontroller.FindInternalIPAddress(me)
-	if meInternalIP == "" {
-		glog.Infof("self-node does not yet have internalIP; delaying configuration")
-		return nil
-	}
-
-	myIP := net.ParseIP(meInternalIP)
-	if myIP == nil {
-		return fmt.Errorf("cannot parse my IP %q", meInternalIP)
-	}
-
-	// TODO: Can we / should we share these (do things by CIDR?)
+	// TODO: Can we / should we share these (we can't do things by CIDR though, so it might be impossible)
 
 	{
 		actualList, err := netlink.XfrmStateList(netlink.FAMILY_ALL)
@@ -127,17 +135,23 @@ func (p *IpsecRoutingProvider) EnsureCIDRs(me *api.Node, allNodes []api.Node) er
 
 		expected := make(map[int]*netlink.XfrmState)
 
-		cidrMap := routecontroller.BuildCIDRMap(me, allNodes)
-
-		for remoteCIDRString, remoteIPString := range cidrMap {
-			remoteNodeNumeral, err := computeNodeNumeral(remoteCIDRString)
-			if err != nil {
-				return err
+		for _, remote := range allNodes {
+			if remote.Name == me.Name {
+				continue
 			}
 
-			remoteIP := net.ParseIP(remoteIPString)
-			if remoteIP == nil {
-				return fmt.Errorf("cannot parse remote IP %q", remoteIPString)
+			if remote.Address == nil {
+				glog.Infof("Node %q did not have address; ignoring", remote.Name)
+				continue
+			}
+			if remote.PodCIDR == nil {
+				glog.Infof("Node %q did not have PodCIDR; ignoring", remote.Name)
+				continue
+			}
+
+			remoteNodeNumeral, err := computeNodeNumeral(remote.PodCIDR)
+			if err != nil {
+				return err
 			}
 
 			// dir isn't explicit in state rules, but we use it to avoid code duplication
@@ -164,8 +178,8 @@ func (p *IpsecRoutingProvider) EnsureCIDRs(me *api.Node, allNodes []api.Node) er
 					p.Limits = noLimits
 
 					if dir == netlink.XFRM_DIR_OUT {
-						p.Src = myIP
-						p.Dst = remoteIP
+						p.Src = me.Address
+						p.Dst = remote.Address
 
 						spi := uint32(0xc0000000)
 						spi |= meNodeNumeral << 16
@@ -173,14 +187,17 @@ func (p *IpsecRoutingProvider) EnsureCIDRs(me *api.Node, allNodes []api.Node) er
 						spi |= 0x0
 						p.Spi = int(spi)
 					} else {
-						p.Src = remoteIP
-						p.Dst = myIP
+						p.Src = remote.Address
+						p.Dst = me.Address
 
 						spi := uint32(0xc0000000)
 						spi |= remoteNodeNumeral << 16
 						spi |= meNodeNumeral << 2
 						spi |= 0x0
 						p.Spi = int(spi)
+					}
+					if expected[p.Spi] != nil {
+						glog.Fatalf("Found duplicate AH SPI %d %v %v %v", p.Spi, dir, me.Address, remote.Address)
 					}
 					expected[p.Spi] = p
 				}
@@ -205,8 +222,8 @@ func (p *IpsecRoutingProvider) EnsureCIDRs(me *api.Node, allNodes []api.Node) er
 					p.Limits = noLimits
 
 					if dir == netlink.XFRM_DIR_OUT {
-						p.Src = myIP
-						p.Dst = remoteIP
+						p.Src = me.Address
+						p.Dst = remote.Address
 
 						spi := uint32(0xc0000000)
 						spi |= meNodeNumeral << 16
@@ -214,8 +231,8 @@ func (p *IpsecRoutingProvider) EnsureCIDRs(me *api.Node, allNodes []api.Node) er
 						spi |= 0x1
 						p.Spi = int(spi)
 					} else {
-						p.Src = remoteIP
-						p.Dst = myIP
+						p.Src = remote.Address
+						p.Dst = me.Address
 
 						spi := uint32(0xc0000000)
 						spi |= remoteNodeNumeral << 16
@@ -223,7 +240,9 @@ func (p *IpsecRoutingProvider) EnsureCIDRs(me *api.Node, allNodes []api.Node) er
 						spi |= 0x1
 						p.Spi = int(spi)
 					}
-
+					if expected[p.Spi] != nil {
+						glog.Fatalf("Found duplicate ESP SPI %d %v %v %v", p.Spi, dir, me.Address, remote.Address)
+					}
 					expected[p.Spi] = p
 				}
 			}
@@ -325,32 +344,29 @@ func (p *IpsecRoutingProvider) EnsureCIDRs(me *api.Node, allNodes []api.Node) er
 			expected = append(expected, p)
 		}
 
-		_, meCIDR, err := net.ParseCIDR(me.Spec.PodCIDR)
-		if err != nil {
-			return fmt.Errorf("error parsing my PodCidr %q: %v", me.Spec.PodCIDR, err)
-		}
-
-		cidrMap := routecontroller.BuildCIDRMap(me, allNodes)
-
-		for remoteCIDRString, remoteIPString := range cidrMap {
-			_, remoteCIDR, err := net.ParseCIDR(remoteCIDRString)
-			if err != nil {
-				return fmt.Errorf("error parsing PodCidr %q: %v", remoteCIDRString, err)
+		for _, remote := range allNodes {
+			if remote.Name == me.Name {
+				continue
 			}
 
-			remoteIP := net.ParseIP(remoteIPString)
-			if remoteIP == nil {
-				return fmt.Errorf("cannot parse remote IP %q", remoteIPString)
+			if remote.Address == nil {
+				glog.Infof("Node %q did not have address; ignoring", remote.Name)
+				continue
+			}
+			if remote.PodCIDR == nil {
+				glog.Infof("Node %q did not have PodCIDR; ignoring", remote.Name)
+				continue
 			}
 
+			// TODO: Do we need forward??
 			for _, dir := range []netlink.Dir{netlink.XFRM_DIR_IN, netlink.XFRM_DIR_OUT, netlink.XFRM_DIR_FWD} {
 				p := &netlink.XfrmPolicy{}
 				if dir == netlink.XFRM_DIR_OUT {
-					p.Src = meCIDR
-					p.Dst = remoteCIDR
+					p.Src = me.PodCIDR
+					p.Dst = remote.PodCIDR
 				} else {
-					p.Src = remoteCIDR
-					p.Dst = meCIDR
+					p.Src = remote.PodCIDR
+					p.Dst = me.PodCIDR
 				}
 				p.Dir = dir
 				p.Priority = 100
@@ -365,11 +381,77 @@ func (p *IpsecRoutingProvider) EnsureCIDRs(me *api.Node, allNodes []api.Node) er
 				t := &p.Tmpls[0]
 
 				if dir == netlink.XFRM_DIR_OUT {
-					t.Src = myIP
-					t.Dst = remoteIP
+					t.Src = me.Address
+					t.Dst = remote.Address
 				} else {
-					t.Src = remoteIP
-					t.Dst = myIP
+					t.Src = remote.Address
+					t.Dst = me.Address
+				}
+
+				expected = append(expected, p)
+			}
+
+			// TODO: Do we need forward??
+			for _, dir := range []netlink.Dir{netlink.XFRM_DIR_IN, netlink.XFRM_DIR_OUT, netlink.XFRM_DIR_FWD} {
+				p := &netlink.XfrmPolicy{}
+				if dir == netlink.XFRM_DIR_OUT {
+					p.Src = me.PodCIDR
+					p.Dst = ipToIpnet(remote.Address)
+				} else {
+					p.Src = ipToIpnet(remote.Address)
+					p.Dst = me.PodCIDR
+				}
+				p.Dir = dir
+				p.Priority = 100
+
+				p.Tmpls = []netlink.XfrmPolicyTmpl{
+					{
+						Proto: netlink.XFRM_PROTO_ESP,
+						Mode:  netlink.XFRM_MODE_TUNNEL,
+					},
+				}
+
+				t := &p.Tmpls[0]
+
+				if dir == netlink.XFRM_DIR_OUT {
+					t.Src = me.Address
+					t.Dst = remote.Address
+				} else {
+					t.Src = remote.Address
+					t.Dst = me.Address
+				}
+
+				expected = append(expected, p)
+			}
+
+			// TODO: Do we need forward??
+			for _, dir := range []netlink.Dir{netlink.XFRM_DIR_IN, netlink.XFRM_DIR_OUT, netlink.XFRM_DIR_FWD} {
+				p := &netlink.XfrmPolicy{}
+				if dir == netlink.XFRM_DIR_OUT {
+					p.Src = ipToIpnet(me.Address)
+					p.Dst = remote.PodCIDR
+				} else {
+					p.Src = remote.PodCIDR
+					p.Dst = ipToIpnet(me.Address)
+				}
+				p.Dir = dir
+				p.Priority = 100
+
+				p.Tmpls = []netlink.XfrmPolicyTmpl{
+					{
+						Proto: netlink.XFRM_PROTO_ESP,
+						Mode:  netlink.XFRM_MODE_TUNNEL,
+					},
+				}
+
+				t := &p.Tmpls[0]
+
+				if dir == netlink.XFRM_DIR_OUT {
+					t.Src = me.Address
+					t.Dst = remote.Address
+				} else {
+					t.Src = remote.Address
+					t.Dst = me.Address
 				}
 
 				expected = append(expected, p)
@@ -446,7 +528,16 @@ func (p *IpsecRoutingProvider) EnsureCIDRs(me *api.Node, allNodes []api.Node) er
 		}
 	}
 
+	p.lastVersionApplied = version
+
 	return nil
+}
+
+func ipToIpnet(ip net.IP) *net.IPNet {
+	return &net.IPNet{
+		IP:   ip,
+		Mask: net.IPv4Mask(255, 255, 255, 255),
+	}
 }
 
 func xfrmPolicyEqual(l *netlink.XfrmPolicy, r *netlink.XfrmPolicy) bool {
@@ -659,15 +750,10 @@ func ipnetEqual(a *net.IPNet, e *net.IPNet) bool {
 	return true
 }
 
-func computeNodeNumeral(podCIDRString string) (uint32, error) {
-	_, podCIDR, err := net.ParseCIDR(podCIDRString)
-	if err != nil {
-		return 0, fmt.Errorf("error parsing PodCidr %q: %v", podCIDRString, err)
-	}
-
+func computeNodeNumeral(podCIDR *net.IPNet) (uint32, error) {
 	podCIDRv4 := podCIDR.IP.To4()
 	if podCIDRv4 == nil {
-		return 0, fmt.Errorf("expected IPv4 PodCidr %q: %v", podCIDRString, err)
+		return 0, fmt.Errorf("expected IPv4 PodCidr %q", podCIDR)
 	}
 	v := binary.BigEndian.Uint32(podCIDRv4)
 	ones, bits := podCIDR.Mask.Size()
@@ -677,6 +763,6 @@ func computeNodeNumeral(podCIDRString string) (uint32, error) {
 	// TODO: We have all the nodes; detect if we go over
 	v = v & 0x3fff
 
-	glog.Infof("Mapped CIDR %q -> %d", podCIDRString, v)
+	glog.Infof("Mapped CIDR %q -> %d", podCIDR, v)
 	return v, nil
 }
