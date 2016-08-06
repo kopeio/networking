@@ -149,7 +149,23 @@ func main() {
 	//case "gre":
 	//	provider, err = grerouting.NewGreRoutingProvider()
 	case "ipsec":
-		provider, err = ipsecrouting.NewIpsecRoutingProvider()
+		authenticationStrategy := &ipsecrouting.PlaintextAuthenticationStrategy{}
+		encryptionStrategy := &ipsecrouting.PlaintextEncryptionStrategy{}
+		//authenticationStrategy := &ipsecrouting.HmacSha1AuthenticationStrategy{}
+		//encryptionStrategy := &ipsecrouting.AesEncryptionStrategy{}
+		encapsulationStrategy := &ipsecrouting.EspEncapsulationStrategy{}
+		//encapsulationStrategy := &ipsecrouting.UdpEncapsulationStrategy{}
+		var ipsecProvider *ipsecrouting.IpsecRoutingProvider
+		ipsecProvider, err = ipsecrouting.NewIpsecRoutingProvider(authenticationStrategy, encryptionStrategy, encapsulationStrategy)
+		if err == nil {
+			// TODO: This is only because state update is not working
+			glog.Warningf("TODO Doing ip xfrm flush; remove!!")
+			err := ipsecProvider.Flush()
+			if err != nil {
+				glog.Fatalf("cannot flush tables")
+			}
+		}
+		provider = ipsecProvider
 
 	default:
 		glog.Fatalf("provider not known: %q", *providerID)
