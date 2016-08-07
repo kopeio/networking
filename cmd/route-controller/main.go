@@ -28,6 +28,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/kopeio/route-controller/pkg/routing"
 	"github.com/kopeio/route-controller/pkg/routing/ipsecrouting"
+	"github.com/kopeio/route-controller/pkg/routing/layer2"
 	"github.com/kopeio/route-controller/pkg/routing/vxlan"
 	"github.com/kopeio/route-controller/pkg/watchers"
 	"github.com/spf13/pflag"
@@ -60,6 +61,8 @@ var (
 	systemUUIDPath = flags.String("system-uuid", "", "path to file containing system-uuid (as set in node status)")
 	bootIDPath     = flags.String("boot-id", "", "path to file containing boot-id (as set in node status)")
 	providerID     = flags.String("provider", "gre", "route backend to use")
+
+	targetLinkName = flags.String("target", "eth0", "network link to use for actual packet transport")
 
 	// I can't figure out how to get a serviceaccount in a manifest-controlled pod
 	//inCluster = flags.Bool("running-in-cluster", true,
@@ -144,8 +147,8 @@ func main() {
 
 	var provider routing.Provider
 	switch *providerID {
-	//case "layer2":
-	//	provider, err = layer2routing.NewLayer2RoutingProvider()
+	case "layer2":
+		provider, err = layer2.NewLayer2RoutingProvider(*targetLinkName)
 	//case "mock":
 	//	provider, err = mockrouting.NewMockRoutingProvider()
 	//case "gre":

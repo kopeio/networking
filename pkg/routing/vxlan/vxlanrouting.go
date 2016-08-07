@@ -54,6 +54,7 @@ func listenArp(link netlink.Link) error {
 	}
 	return nil
 }
+
 func (p *VxlanRoutingProvider) EnsureLink(me net.IP, cidr *net.IPNet) (netlink.Link, error) {
 	name := fmt.Sprintf("vxlan%d", p.vxlanID)
 
@@ -220,7 +221,9 @@ func (p *VxlanRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 		return fmt.Errorf("error applying neigh table: %v", err)
 	}
 
-	err = p.routeTable.Ensure(p.link, routes)
+	// We are specifying a link scope, so we do delete routes
+	deleteExtraRoutes := true
+	err = p.routeTable.Ensure(p.link, routes, deleteExtraRoutes)
 	if err != nil {
 		return fmt.Errorf("error applying route table: %v", err)
 	}

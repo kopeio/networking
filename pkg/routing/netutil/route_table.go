@@ -11,7 +11,7 @@ import (
 type RouteTable struct {
 }
 
-func (t *RouteTable) Ensure(link netlink.Link, expected []*netlink.Route) error {
+func (t *RouteTable) Ensure(link netlink.Link, expected []*netlink.Route, deleteExtraRoutes bool) error {
 	glog.V(2).Infof("NETLINK: ip route show")
 	actualList, err := netlink.RouteList(link, netlink.FAMILY_ALL)
 	if err != nil {
@@ -23,7 +23,8 @@ func (t *RouteTable) Ensure(link netlink.Link, expected []*netlink.Route) error 
 	for i := range actualList {
 		a := &actualList[i]
 		if a.Dst == nil {
-			glog.Errorf("ignoring unexpected route with no dst: %v", a)
+			// Probably the default gateway
+			glog.V(2).Infof("ignoring route with no dst: %v", routecontroller.AsJsonString(a))
 			continue
 		}
 		k := a.Dst.String()
@@ -38,8 +39,7 @@ func (t *RouteTable) Ensure(link netlink.Link, expected []*netlink.Route) error 
 
 	for _, e := range expected {
 		if e.Dst == nil {
-			glog.V(2).Infof("ignoring default route (with no dst): %v", e)
-			continue
+			return fmt.Errorf("expected route did not have dst: %v", routecontroller.AsJsonString(e))
 		}
 		k := e.Dst.String()
 		expectedMap[k] = e
@@ -55,27 +55,29 @@ func (t *RouteTable) Ensure(link netlink.Link, expected []*netlink.Route) error 
 		}
 
 		if !routeEqual(a, e) {
-			glog.V(2).Infof("State change for %s:\n\ta: %s\n\te: %s", k, routecontroller.AsJsonString(a), routecontroller.AsJsonString(e))
+			glog.V(2).Infof("change for %s:\n\ta: %s\n\te: %s", k, routecontroller.AsJsonString(a), routecontroller.AsJsonString(e))
 			remove = append(remove, a)
 			create = append(create, e)
 		}
 	}
 
-	for k, a := range actualMap {
-		e := expectedMap[k]
+	if deleteExtraRoutes {
+		for k, a := range actualMap {
+			e := expectedMap[k]
 
-		if e == nil {
-			remove = append(remove, a)
-			continue
+			if e == nil {
+				remove = append(remove, a)
+				continue
+			}
 		}
-	}
 
-	if len(remove) != 0 {
-		for _, r := range remove {
-			glog.Infof("NETLINK: ip route del %v", routecontroller.AsJsonString(r))
-			err := netlink.RouteDel(r)
-			if err != nil {
-				return fmt.Errorf("error removing route: %v", err)
+		if len(remove) != 0 {
+			for _, r := range remove {
+				glog.Infof("NETLINK: ip route del %v", routecontroller.AsJsonString(r))
+				err := netlink.RouteDel(r)
+				if err != nil {
+					return fmt.Errorf("error removing route: %v", err)
+				}
 			}
 		}
 	}

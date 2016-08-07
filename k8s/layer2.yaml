@@ -26,7 +26,7 @@ spec:
             privileged: true
           image: kope/route-controller
           name: kope-routing
-          command: [ "/usr/bin/route-controller", "--provider=ipsec", "--system-uuid", "/sys/class/dmi/id/product_uuid" ]
+          command: [ "/usr/bin/route-controller", "--provider=layer2", "--system-uuid", "/sys/class/dmi/id/product_uuid", "--v=4" ]
           volumeMounts:
             - name: lib-modules
               mountPath: /lib/modules
