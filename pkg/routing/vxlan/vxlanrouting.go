@@ -17,9 +17,9 @@ type VxlanRoutingProvider struct {
 
 	monitor *NetlinkMonitor
 
-	vxlanID      int
-	vtepIndex    int
-	vxlanPort    int
+	vxlanID   int
+	vtepIndex int
+	vxlanPort int
 
 	link       *netlink.Vxlan
 	routeTable *netutil.RouteTable
@@ -34,9 +34,9 @@ func NewVxlanRoutingProvider(overlayCIDR *net.IPNet) (*VxlanRoutingProvider, err
 	p := &VxlanRoutingProvider{
 		overlayCIDR: overlayCIDR,
 
-		vxlanID:      1,
-		vtepIndex:    0,
-		vxlanPort:    4789,
+		vxlanID:   1,
+		vtepIndex: 0,
+		vxlanPort: 4789,
 	}
 
 	return p, nil
@@ -93,7 +93,7 @@ func (p *VxlanRoutingProvider) EnsureLink(me net.IP, cidr *net.IPNet) (netlink.L
 
 	// ip addr add $cidr dev $link
 	linkCIDR := &net.IPNet{
-		IP: cidr.IP,
+		IP:   cidr.IP,
 		Mask: p.overlayCIDR.Mask,
 	}
 	err = netutil.EnsureLinkAddresses(link, []*netlink.Addr{
@@ -175,6 +175,9 @@ func (p *VxlanRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 		r := &netlink.Route{
 			LinkIndex: linkIndex,
 			Dst:       p.overlayCIDR,
+			Protocol:  syscall.RTPROT_BOOT,
+			Table:     syscall.RT_TABLE_MAIN,
+			Type:      syscall.RTN_UNICAST,
 		}
 		routes = append(routes, r)
 	}
@@ -212,12 +215,12 @@ func (p *VxlanRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 		}
 	}
 
-	err := p.neighTable.Ensure(neighs)
+	err := p.neighTable.Ensure(p.link, neighs)
 	if err != nil {
 		return fmt.Errorf("error applying neigh table: %v", err)
 	}
 
-	err = p.routeTable.Ensure(routes)
+	err = p.routeTable.Ensure(p.link, routes)
 	if err != nil {
 		return fmt.Errorf("error applying route table: %v", err)
 	}

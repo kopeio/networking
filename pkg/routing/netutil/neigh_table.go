@@ -10,29 +10,22 @@ import (
 )
 
 type NeighTable struct {
-	linkName  string
-	linkIndex int
 }
 
 func NewNeighTable(linkName string, linkIndex int) (*NeighTable, error) {
-	t := &NeighTable{
-		linkName:  linkName,
-		linkIndex: linkIndex,
-	}
+	t := &NeighTable{}
 
 	return t, nil
 }
 
-func (t *NeighTable) Ensure(expected []*netlink.Neigh) error {
-	glog.V(2).Infof("NETLINK: ip neigh show dev %s", t.linkName)
-	glog.V(2).Infof("link index=%d", t.linkIndex)
-	actualList, err := netlink.NeighList(t.linkIndex, netlink.FAMILY_ALL)
+func (t *NeighTable) Ensure(link netlink.Link, expected []*netlink.Neigh) error {
+	linkName := link.Attrs().Name
+	linkIndex := link.Attrs().Index
+
+	glog.V(2).Infof("NETLINK: ip neigh show dev %s", linkName)
+	actualList, err := netlink.NeighList(linkIndex, netlink.FAMILY_ALL)
 	if err != nil {
 		return fmt.Errorf("error listing layer2 config: %v", err)
-	}
-
-	for _, e := range expected {
-		e.LinkIndex = t.linkIndex
 	}
 
 	glog.Warningf("TODO: using strings as layer2 key is inefficient")
@@ -45,7 +38,7 @@ func (t *NeighTable) Ensure(expected []*netlink.Neigh) error {
 		}
 		k := a.IP.String()
 		actualMap[k] = a
-		glog.Infof("Actual layer2 entry: %v", routecontroller.AsJsonString(a))
+		glog.V(4).Infof("Actual layer2 entry: %v", routecontroller.AsJsonString(a))
 	}
 
 	expectedMap := make(map[string]*netlink.Neigh)
@@ -57,11 +50,10 @@ func (t *NeighTable) Ensure(expected []*netlink.Neigh) error {
 		}
 		k := e.IP.String()
 		expectedMap[k] = e
-		glog.Infof("Expected layer2 entry: %v", routecontroller.AsJsonString(e))
+		glog.V(4).Infof("Expected layer2 entry: %v", routecontroller.AsJsonString(e))
 	}
 
 	var upsert []*netlink.Neigh
-	var remove []*netlink.Neigh
 
 	for k, e := range expectedMap {
 		a := actualMap[k]
@@ -72,40 +64,40 @@ func (t *NeighTable) Ensure(expected []*netlink.Neigh) error {
 		}
 
 		if !neighEqual(a, e) {
-			glog.Infof("neigh change for %s:\n\t%s\n\t%s", k, routecontroller.AsJsonString(a), routecontroller.AsJsonString(e))
-			//remove = append(remove, a)
+			glog.V(2).Infof("neigh change for %s:\n\t%s\n\t%s", k, routecontroller.AsJsonString(a), routecontroller.AsJsonString(e))
 			upsert = append(upsert, e)
 		}
 	}
 
-	for k, a := range actualMap {
-		e := expectedMap[k]
-
-		if e == nil {
-			remove = append(remove, a)
-			continue
-		}
-	}
-
-	if len(remove) != 0 {
-		for _, r := range remove {
-			glog.Infof("Skipping neigh delete: %v", routecontroller.AsJsonString(r))
-			//glog.V(2).Infof("NETLINK: ip neigh delete %v", routecontroller.AsJsonString(r))
-			//glog.V(2).Infof(" full neigh: %v", routecontroller.AsJsonString(r))
-			//err := netlink.NeighDel(r)
-			//if err != nil {
-			//	return fmt.Errorf("error removing layer2 entry: %v", err)
-			//}
-		}
-	}
+	// We don't remove neighbour entries
+	//var remove []*netlink.Neigh
+	//for k, a := range actualMap {
+	//	e := expectedMap[k]
+	//
+	//	if e == nil {
+	//		remove = append(remove, a)
+	//		continue
+	//	}
+	//}
+	//
+	//if len(remove) != 0 {
+	//	for _, r := range remove {
+	//		glog.Infof("NETLINK: ip neigh delete %v", routecontroller.AsJsonString(r))
+	//		glog.V(2).Infof(" full neigh: %v", routecontroller.AsJsonString(r))
+	//		err := netlink.NeighDel(r)
+	//		if err != nil {
+	//			return fmt.Errorf("error removing route entry: %v", err)
+	//		}
+	//	}
+	//}
 
 	if len(upsert) != 0 {
 		for _, r := range upsert {
-			glog.V(2).Infof("NETLINK: ip neigh replace to %s lladdr %s dev %d", r.IP, r.HardwareAddr, r.LinkIndex)
+			glog.Infof("NETLINK: ip neigh replace to %s lladdr %s dev %d", r.IP, r.HardwareAddr, r.LinkIndex)
 			glog.V(2).Infof(" full neigh: %v", routecontroller.AsJsonString(r))
 			err := netlink.NeighSet(r)
 			if err != nil {
-				return fmt.Errorf("error creating layer2 entry %v: %v", r, err)
+				return fmt.Errorf("error doing `ip neigh replace to %s lladdr %s dev %d`: %v", r.IP, r.HardwareAddr, r.LinkIndex, err)
 			}
 		}
 	}

@@ -1,0 +1,37 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: kope-routing
+  labels:
+    tier: routing
+    app: kope-routing
+    version: v1
+spec:
+  template:
+    metadata:
+      labels:
+        name: kope-routing
+    spec:
+      # Filter to specific nodes:
+      # nodeSelector:
+      #  app: kope-routing
+      hostPID: true
+      hostIPC: true
+      hostNetwork: true
+      containers:
+        - resources:
+            requests:
+              cpu: 0.20
+          securityContext:
+            privileged: true
+          image: kope/route-controller
+          name: kope-routing
+          command: [ "/usr/bin/route-controller", "--provider=vxlan", "--system-uuid", "/sys/class/dmi/id/product_uuid", "--v=4" ]
+          volumeMounts:
+            - name: lib-modules
+              mountPath: /lib/modules
+              readOnly: true
+      volumes:
+        - name: lib-modules
+          hostPath:
+            path: /lib/modules
