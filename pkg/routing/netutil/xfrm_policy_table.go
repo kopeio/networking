@@ -69,7 +69,7 @@ func (t *XfrmPolicyTable) Ensure(expected []*netlink.XfrmPolicy) error {
 			glog.Infof("creating policy %v", routecontroller.AsJsonString(p))
 			err := netlink.XfrmPolicyAdd(p)
 			if err != nil {
-				glog.Warningf("error creating policy: %v", err)
+				return fmt.Errorf("error creating policy: %v", err)
 			}
 		}
 	}
@@ -79,7 +79,7 @@ func (t *XfrmPolicyTable) Ensure(expected []*netlink.XfrmPolicy) error {
 			glog.Infof("updating policy %v", routecontroller.AsJsonString(p))
 			err := netlink.XfrmPolicyUpdate(p)
 			if err != nil {
-				glog.Warningf("error updating policy: %v", err)
+				return fmt.Errorf("error updating policy: %v", err)
 			}
 		}
 	}
@@ -89,7 +89,7 @@ func (t *XfrmPolicyTable) Ensure(expected []*netlink.XfrmPolicy) error {
 			glog.Infof("removing policy %v", routecontroller.AsJsonString(p))
 			err := netlink.XfrmPolicyDel(p)
 			if err != nil {
-				glog.Warningf("error removing policy: %v", err)
+				return fmt.Errorf("error removing policy: %v", err)
 			}
 		}
 	}

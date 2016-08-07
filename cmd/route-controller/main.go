@@ -28,11 +28,13 @@ import (
 	"github.com/golang/glog"
 	"github.com/kopeio/route-controller/pkg/routing"
 	"github.com/kopeio/route-controller/pkg/routing/ipsecrouting"
+	"github.com/kopeio/route-controller/pkg/routing/vxlan"
 	"github.com/kopeio/route-controller/pkg/watchers"
 	"github.com/spf13/pflag"
 	"k8s.io/kubernetes/pkg/api/v1"
 	client "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_3/typed/core/v1"
 	kubectl_util "k8s.io/kubernetes/pkg/kubectl/cmd/util"
+	"net"
 )
 
 //const (
@@ -148,6 +150,10 @@ func main() {
 	//	provider, err = mockrouting.NewMockRoutingProvider()
 	//case "gre":
 	//	provider, err = grerouting.NewGreRoutingProvider()
+	case "vxlan":
+		glog.Errorf("assuming overlay is 100.96.0.0/12")
+		_, overlayCIDR, _ := net.ParseCIDR("100.96.0.0/12")
+		provider, err = vxlan.NewVxlanRoutingProvider(overlayCIDR)
 	case "ipsec":
 		authenticationStrategy := &ipsecrouting.PlaintextAuthenticationStrategy{}
 		encryptionStrategy := &ipsecrouting.PlaintextEncryptionStrategy{}

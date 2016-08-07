@@ -1,22 +1,27 @@
-package vxlanrouting
+package vxlan
 
 import (
 	"fmt"
 	"net"
-	"syscall"
 
 	"github.com/golang/glog"
 	"github.com/kopeio/route-controller/pkg/routing"
 	"github.com/kopeio/route-controller/pkg/routing/netutil"
 	"github.com/vishvananda/netlink"
+	"io/ioutil"
+	"syscall"
 )
 
 type VxlanRoutingProvider struct {
+	overlayCIDR *net.IPNet
+
+	monitor *NetlinkMonitor
+
 	vxlanID      int
 	vtepIndex    int
-	vxlanSrcAddr net.IP
 	vxlanPort    int
 
+	link       *netlink.Vxlan
 	routeTable *netutil.RouteTable
 	neighTable *netutil.NeighTable
 
@@ -25,11 +30,12 @@ type VxlanRoutingProvider struct {
 
 var _ routing.Provider = &VxlanRoutingProvider{}
 
-func NewVxlanRoutingProvider() (*VxlanRoutingProvider, error) {
+func NewVxlanRoutingProvider(overlayCIDR *net.IPNet) (*VxlanRoutingProvider, error) {
 	p := &VxlanRoutingProvider{
+		overlayCIDR: overlayCIDR,
+
 		vxlanID:      1,
 		vtepIndex:    0,
-		vxlanSrcAddr: nil, // TODO?
 		vxlanPort:    4789,
 	}
 
@@ -40,39 +46,77 @@ func (p *VxlanRoutingProvider) Close() error {
 	return nil
 }
 
-func (p *VxlanRoutingProvider) EnsureLink() (netlink.Link, error) {
-
-	// VXLAN tunnels with layer-2 routing seems to work... tried manually with:
-
-	// on each host:
-	// ip link add vxlan1 type vxlan id 1 dev eth0 dstport 4789
-	// ip link set vxlan1 address 54:8:64:40:02:01
-	// ip addr add 10.244.0.0/32 dev vxlan1
-	// ip link set up vxlan1
-
-	// and then on each host, for each peer:
-	// bridge fdb add to 54:08:64:40:01:01 dst 172.20.27.211 dev vxlan1
-	// arp -i vxlan1 -s 10.244.100.1 54:08:64:40:01:01
-	// ip route add 10.244.100.0/32 dev vxlan1
-	// ip route add 10.244.100.0/24 via 10.244.100.0
-
+func listenArp(link netlink.Link) error {
+	sysctlPath := "/proc/sys/net/ipv4/neigh/" + link.Attrs().Name + "/app_solicit"
+	err := ioutil.WriteFile(sysctlPath, []byte("3"), 0666)
+	if err != nil {
+		return fmt.Errorf("error writing setting sysctl for ARP events: %v", err)
+	}
+	return nil
+}
+func (p *VxlanRoutingProvider) EnsureLink(me net.IP, cidr *net.IPNet) (netlink.Link, error) {
 	name := fmt.Sprintf("vxlan%d", p.vxlanID)
 
-	var macAddress net.HardwareAddr
+	macAddress := mapToMAC(cidr.IP)
 
+	// TODO: mtu
+
+	// TODO: Check if exists first?
 	link := &netlink.Vxlan{
 		LinkAttrs: netlink.LinkAttrs{
-			Name:         name,
-			MTU:          mtu,
+			Name: name,
+			//MTU:          mtu,
 			HardwareAddr: macAddress,
 		},
 		VxlanId:      p.vxlanID,
 		VtepDevIndex: p.vtepIndex,
-		SrcAddr:      p.vxlanSrcAddr,
+		SrcAddr:      me,
 		Port:         p.vxlanPort,
 	}
+	err := netlink.LinkAdd(link)
+	if err != nil {
+		// TODO: Reconfigure link?
+		glog.Warningf("Unable to create link; will reuse existing link: %v", err)
+	}
 
+	glog.V(2).Infof("NETLINK: ip link set %s address %s", link.Name, macAddress)
+	err = netlink.LinkSetHardwareAddr(link, macAddress)
+	if err != nil {
+		return nil, fmt.Errorf("failed to `ip link set %s address %s`: %v", link.Name, macAddress, err)
+	}
+
+	// We need the link index
+	found, err := netlink.LinkByName(link.Name)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving link %q: %v", link.Name, err)
+	}
+
+	// ip addr add $cidr dev $link
+	linkCIDR := &net.IPNet{
+		IP: cidr.IP,
+		Mask: p.overlayCIDR.Mask,
+	}
+	err = netutil.EnsureLinkAddresses(link, []*netlink.Addr{
+		{
+			IPNet: linkCIDR,
+			Label: link.Name,
+			Flags: 128, // ???
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to `ip addr add %s dev link %s`: %v", cidr, link.Name, err)
+	}
+
+	// ip link set $link up
+	glog.V(2).Infof("NETLINK: ip link set %s up", link.Name)
+	err = netlink.LinkSetUp(link)
+	if err != nil {
+		return nil, fmt.Errorf("failed to `ip link set %s up`: %s", link.Name, err)
+	}
+
+	return found, nil
 }
+
 func (p *VxlanRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 	if p.lastVersionApplied != 0 && nodeMap.IsVersion(p.lastVersionApplied) {
 		return nil
@@ -92,15 +136,48 @@ func (p *VxlanRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 		return fmt.Errorf("No Address assigned to local node; cannot configure tunnels")
 	}
 
-	link, err := p.EnsureLink()
-	if err != nil {
-		return err
+	if p.link == nil {
+		p.routeTable = &netutil.RouteTable{}
+
+		link, err := p.EnsureLink(me.Address, me.PodCIDR)
+		if err != nil {
+			return err
+		}
+		p.link = link.(*netlink.Vxlan)
+		p.neighTable, err = netutil.NewNeighTable(link.Attrs().Name, link.Attrs().Index)
+		if err != nil {
+			return err
+		}
+
+		err = listenArp(link)
+		if err != nil {
+			return err
+		}
+
+		monitor, err := NewNetlinkMonitor(link.Attrs().Index)
+		if err != nil {
+			return err
+		}
+		err = monitor.Start()
+		if err != nil {
+			return err
+		}
+		p.monitor = monitor
 	}
 
-	linkIndex := link.Attrs().Index
+	linkIndex := p.link.Attrs().Index
 
 	var neighs []*netlink.Neigh
 	var routes []*netlink.Route
+
+	// route whole overlay CIDR to vxlan
+	{
+		r := &netlink.Route{
+			LinkIndex: linkIndex,
+			Dst:       p.overlayCIDR,
+		}
+		routes = append(routes, r)
+	}
 
 	for i := range allNodes {
 		remote := &allNodes[i]
@@ -118,14 +195,14 @@ func (p *VxlanRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 			continue
 		}
 
-		remoteMAC := mapToMAC(remote.Address)
+		remoteMAC := mapToMAC(remote.PodCIDR.IP)
 
-		// bridge fdb add to 54:08:64:40:01:01 dst 172.20.27.211 dev vxlan1
+		// bridge fdb add to <remote-mac> dst <remote-ip> dev vxlan1
 		{
 			n := &netlink.Neigh{
 				LinkIndex:    linkIndex,
-				Family:       syscall.AF_BRIDGE,
 				State:        netlink.NUD_PERMANENT,
+				Family:       syscall.AF_BRIDGE,
 				Flags:        netlink.NTF_SELF,
 				IP:           remote.Address,
 				HardwareAddr: remoteMAC,
@@ -133,37 +210,9 @@ func (p *VxlanRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 
 			neighs = append(neighs, n)
 		}
-		// arp -i vxlan1 -s 10.244.100.1 54:08:64:40:01:01
-		//{
-		//	n := &netlink.Neigh{
-		//		LinkIndex: linkIndex,
-		//		IP:
-		//	}
-		//}
-
-		// ip route add 10.244.100.0/32 dev vxlan1
-		{
-			r := &netlink.Route{
-				LinkIndex: linkIndex,
-				Dst: &net.IPNet{
-					IP:   remote.PodCIDR.IP,
-					Mask: net.IPv4Mask(255, 255, 255, 255),
-				},
-			}
-			routes = append(routes, r)
-		}
-
-		// ip route add 10.244.100.0/24 via 10.244.100.0
-		{
-			r := &netlink.Route{
-				Dst: remote.PodCIDR,
-				Gw:  remote.PodCIDR.IP,
-			}
-			routes = append(routes, r)
-		}
 	}
 
-	err = p.neighTable.Ensure(neighs)
+	err := p.neighTable.Ensure(neighs)
 	if err != nil {
 		return fmt.Errorf("error applying neigh table: %v", err)
 	}
@@ -184,7 +233,7 @@ func mapToMAC(ip net.IP) net.HardwareAddr {
 	hw[0] = 0x00
 	hw[1] = 0x53
 	ip4 := ip.To4()
-	if ip4 != nil {
+	if ip4 == nil {
 		glog.Fatalf("unexpected non-ipv4 IP: %v", ip)
 	}
 	hw[2] = ip4[0]
@@ -192,5 +241,7 @@ func mapToMAC(ip net.IP) net.HardwareAddr {
 	hw[4] = ip4[2]
 	hw[5] = ip4[3]
 
-	return net.HardwareAddr(hw)
+	mac := net.HardwareAddr(hw)
+	glog.V(4).Infof("mapped ip %s -> mac %s", ip, mac)
+	return mac
 }

@@ -71,7 +71,7 @@ func (p *XfrmStateTable) Ensure(expectedList []*netlink.XfrmState) error {
 			glog.Infof("creating state %v", routecontroller.AsJsonString(p))
 			err := netlink.XfrmStateAdd(p)
 			if err != nil {
-				glog.Warningf("error creating state %v: %v", p, err)
+				return fmt.Errorf("error creating state %v: %v", p, err)
 			}
 		}
 	}
@@ -80,7 +80,7 @@ func (p *XfrmStateTable) Ensure(expectedList []*netlink.XfrmState) error {
 			glog.Infof("updating state %v", routecontroller.AsJsonString(p))
 			err := netlink.XfrmStateUpdate(p)
 			if err != nil {
-				glog.Warningf("error updating state %v: %v", p, err)
+				return fmt.Errorf("error updating state %v: %v", p, err)
 			}
 		}
 	}
@@ -90,7 +90,7 @@ func (p *XfrmStateTable) Ensure(expectedList []*netlink.XfrmState) error {
 			glog.Infof("removing state %v", routecontroller.AsJsonString(p))
 			err := netlink.XfrmStateDel(p)
 			if err != nil {
-				glog.Warningf("error removing state: %v", err)
+				return fmt.Errorf("error removing state: %v", err)
 			}
 		}
 	}
