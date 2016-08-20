@@ -21,6 +21,8 @@ type VxlanRoutingProvider struct {
 	vtepIndex int
 	vxlanPort int
 
+	mtu int
+
 	link       *netlink.Vxlan
 	routeTable *netutil.RouteTable
 	neighTable *netutil.NeighTable
@@ -30,13 +32,26 @@ type VxlanRoutingProvider struct {
 
 var _ routing.Provider = &VxlanRoutingProvider{}
 
-func NewVxlanRoutingProvider(overlayCIDR *net.IPNet) (*VxlanRoutingProvider, error) {
+func NewVxlanRoutingProvider(overlayCIDR *net.IPNet, deviceName string) (*VxlanRoutingProvider, error) {
+	underlyingLink, err := netlink.LinkByName(deviceName)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching target link %q: %v", deviceName, err)
+	}
+	if underlyingLink == nil {
+		return nil, fmt.Errorf("target link not found %q", deviceName)
+	}
+
+	mtu := underlyingLink.Attrs().MTU - 100
+	glog.Warningf("MTU hard-coded to underlying interface %s MTU - 100 = %d", deviceName, mtu)
+
 	p := &VxlanRoutingProvider{
 		overlayCIDR: overlayCIDR,
 
 		vxlanID:   1,
 		vtepIndex: 0,
 		vxlanPort: 4789,
+
+		mtu: mtu,
 	}
 
 	return p, nil
@@ -60,13 +75,11 @@ func (p *VxlanRoutingProvider) EnsureLink(me net.IP, cidr *net.IPNet) (netlink.L
 
 	macAddress := mapToMAC(cidr.IP)
 
-	// TODO: mtu
-
 	// TODO: Check if exists first?
 	link := &netlink.Vxlan{
 		LinkAttrs: netlink.LinkAttrs{
-			Name: name,
-			//MTU:          mtu,
+			Name:         name,
+			MTU:          p.mtu,
 			HardwareAddr: macAddress,
 		},
 		VxlanId:      p.vxlanID,
@@ -74,22 +87,31 @@ func (p *VxlanRoutingProvider) EnsureLink(me net.IP, cidr *net.IPNet) (netlink.L
 		SrcAddr:      me,
 		Port:         p.vxlanPort,
 	}
+
 	err := netlink.LinkAdd(link)
 	if err != nil {
 		// TODO: Reconfigure link?
 		glog.Warningf("Unable to create link; will reuse existing link: %v", err)
-	}
-
-	glog.V(2).Infof("NETLINK: ip link set %s address %s", link.Name, macAddress)
-	err = netlink.LinkSetHardwareAddr(link, macAddress)
-	if err != nil {
-		return nil, fmt.Errorf("failed to `ip link set %s address %s`: %v", link.Name, macAddress, err)
+	} else {
+		glog.V(2).Infof("NETLINK: ip link set %s address %s", link.Name, macAddress)
+		err = netlink.LinkSetHardwareAddr(link, macAddress)
+		if err != nil {
+			return nil, fmt.Errorf("failed to `ip link set %s address %s`: %v", link.Name, macAddress, err)
+		}
 	}
 
 	// We need the link index
 	found, err := netlink.LinkByName(link.Name)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving link %q: %v", link.Name, err)
+	}
+
+	if found.Attrs().MTU != p.mtu {
+		glog.V(2).Infof("NETLINK: ip link set %s mtu %d", link.Name, p.mtu)
+		err = netlink.LinkSetMTU(link, p.mtu)
+		if err != nil {
+			return nil, fmt.Errorf("failed to `ip link set %s mtu %d`: %v", link.Name, p.mtu, err)
+		}
 	}
 
 	// ip addr add $cidr dev $link
