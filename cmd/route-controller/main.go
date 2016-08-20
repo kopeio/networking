@@ -64,6 +64,10 @@ var (
 
 	targetLinkName = flags.String("target", "eth0", "network link to use for actual packet transport")
 
+	ipsecEncryption = flags.String("ipsec-encryption", "aes", "encryption method to use (for IPSEC)")
+	ipsecAuthentication = flags.String("ipsec-authentication", "sha1", "authentication method to use (for IPSEC)")
+	ipsecEncapsulation = flags.String("ipsec-encapsulation", "udp", "encapsulation method to use (for IPSEC)")
+
 	// I can't figure out how to get a serviceaccount in a manifest-controlled pod
 	//inCluster = flags.Bool("running-in-cluster", true,
 	//	`Optional, if this controller is running in a kubernetes cluster, use the
@@ -156,14 +160,37 @@ func main() {
 	case "vxlan":
 		glog.Errorf("assuming overlay is 100.96.0.0/12")
 		_, overlayCIDR, _ := net.ParseCIDR("100.96.0.0/12")
-		provider, err = vxlan.NewVxlanRoutingProvider(overlayCIDR)
+		provider, err = vxlan.NewVxlanRoutingProvider(overlayCIDR, *targetLinkName)
 	case "ipsec":
-		authenticationStrategy := &ipsecrouting.PlaintextAuthenticationStrategy{}
-		encryptionStrategy := &ipsecrouting.PlaintextEncryptionStrategy{}
-		//authenticationStrategy := &ipsecrouting.HmacSha1AuthenticationStrategy{}
-		//encryptionStrategy := &ipsecrouting.AesEncryptionStrategy{}
-		encapsulationStrategy := &ipsecrouting.EspEncapsulationStrategy{}
-		//encapsulationStrategy := &ipsecrouting.UdpEncapsulationStrategy{}
+		var authenticationStrategy ipsecrouting.AuthenticationStrategy
+		var encryptionStrategy  ipsecrouting.EncryptionStrategy
+		var encapsulationStrategy  ipsecrouting.EncapsulationStrategy
+
+		switch (*ipsecEncryption) {
+		case "none":
+			encryptionStrategy = &ipsecrouting.PlaintextEncryptionStrategy{}
+		case "aes":
+			encryptionStrategy = &ipsecrouting.AesEncryptionStrategy{}
+			default:
+			glog.Fatalf("unknown ipsec-encryption: %v", *ipsecEncryption)
+		}
+		switch (*ipsecAuthentication) {
+		case "none":
+			authenticationStrategy = &ipsecrouting.PlaintextAuthenticationStrategy{}
+		case "sha1":
+			authenticationStrategy = &ipsecrouting.HmacSha1AuthenticationStrategy{}
+		default:
+			glog.Fatalf("unknown ipsec-authentication: %v", *ipsecAuthentication)
+		}
+		switch (*ipsecEncapsulation) {
+		case "udp":
+			encapsulationStrategy = &ipsecrouting.UdpEncapsulationStrategy{}
+		case "esp":
+			encapsulationStrategy = &ipsecrouting.EspEncapsulationStrategy{}
+		default:
+			glog.Fatalf("unknown ipsec-encapsulation: %v", *ipsecEncapsulation)
+		}
+
 		var ipsecProvider *ipsecrouting.IpsecRoutingProvider
 		ipsecProvider, err = ipsecrouting.NewIpsecRoutingProvider(authenticationStrategy, encryptionStrategy, encapsulationStrategy)
 		if err == nil {

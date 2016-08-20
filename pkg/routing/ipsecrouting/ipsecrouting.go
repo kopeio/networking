@@ -66,7 +66,7 @@ func NewIpsecRoutingProvider(authenticationStrategy AuthenticationStrategy, encr
 		xfrmStateTable:  &netutil.XfrmStateTable{},
 	}
 
-	// TODO: Refactor
+	// TODO: Refactor into encapsulationStrategy
 	port := 4500
 	glog.Infof("Creating encap listener on port %d", port)
 	p.udpEncapListener, err = NewUDPEncapListener(port)
@@ -243,7 +243,7 @@ func (p *IpsecRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 						s.Spi = int(spi)
 
 						p.encryptionStrategy.Apply(s, remote, me)
-						p.encapsulationStrategy.Apply(s, me, remote)
+						p.encapsulationStrategy.Apply(s, remote, me)
 					}
 					expected = append(expected, s)
 				}
@@ -298,6 +298,8 @@ func (p *IpsecRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 			}
 
 			// TODO: Do we need forward??
+			// TODO: Do we need to speciy that AH is required?  (and check that encryption is required)
+			// TODO: Can we tie to a specific policy (or is that done by IP)
 			for _, dir := range []netlink.Dir{netlink.XFRM_DIR_IN, netlink.XFRM_DIR_OUT, netlink.XFRM_DIR_FWD} {
 				p := &netlink.XfrmPolicy{}
 				if dir == netlink.XFRM_DIR_OUT {
