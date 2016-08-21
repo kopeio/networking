@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
-	"github.com/kopeio/route-controller/pkg/routecontroller"
+	"github.com/kopeio/route-controller/pkg/util"
 	"github.com/vishvananda/netlink"
 )
 
@@ -23,7 +23,7 @@ func EnsureLinkAddresses(link netlink.Link, expected []*netlink.Addr) error {
 		}
 		k := a.IPNet.String()
 		actualMap[k] = a
-		glog.Infof("Actual address entry: %v", routecontroller.AsJsonString(a))
+		glog.Infof("Actual address entry: %v", util.AsJsonString(a))
 	}
 
 	expectedMap := make(map[string]*netlink.Addr)
@@ -35,7 +35,7 @@ func EnsureLinkAddresses(link netlink.Link, expected []*netlink.Addr) error {
 		}
 		k := e.IPNet.String()
 		expectedMap[k] = e
-		glog.Infof("Expected address entry: %v", routecontroller.AsJsonString(e))
+		glog.Infof("Expected address entry: %v", util.AsJsonString(e))
 	}
 
 	var create []*netlink.Addr
@@ -50,7 +50,7 @@ func EnsureLinkAddresses(link netlink.Link, expected []*netlink.Addr) error {
 		}
 
 		if !addrEqual(a, e) {
-			glog.Infof("address change for %s:\n\t%s\n\t%s", k, routecontroller.AsJsonString(a), routecontroller.AsJsonString(e))
+			glog.Infof("address change for %s:\n\t%s\n\t%s", k, util.AsJsonString(a), util.AsJsonString(e))
 			remove = append(remove, a)
 			create = append(create, e)
 		}

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
-	"github.com/kopeio/route-controller/pkg/routecontroller"
+	"github.com/kopeio/route-controller/pkg/util"
 	"github.com/vishvananda/netlink"
 )
 
@@ -38,7 +38,7 @@ func (t *NeighTable) Ensure(link netlink.Link, expected []*netlink.Neigh) error 
 		}
 		k := a.IP.String()
 		actualMap[k] = a
-		glog.V(4).Infof("Actual layer2 entry: %v", routecontroller.AsJsonString(a))
+		glog.V(4).Infof("Actual layer2 entry: %v", util.AsJsonString(a))
 	}
 
 	expectedMap := make(map[string]*netlink.Neigh)
@@ -50,7 +50,7 @@ func (t *NeighTable) Ensure(link netlink.Link, expected []*netlink.Neigh) error 
 		}
 		k := e.IP.String()
 		expectedMap[k] = e
-		glog.V(4).Infof("Expected layer2 entry: %v", routecontroller.AsJsonString(e))
+		glog.V(4).Infof("Expected layer2 entry: %v", util.AsJsonString(e))
 	}
 
 	var upsert []*netlink.Neigh
@@ -64,7 +64,7 @@ func (t *NeighTable) Ensure(link netlink.Link, expected []*netlink.Neigh) error 
 		}
 
 		if !neighEqual(a, e) {
-			glog.V(2).Infof("neigh change for %s:\n\t%s\n\t%s", k, routecontroller.AsJsonString(a), routecontroller.AsJsonString(e))
+			glog.V(2).Infof("neigh change for %s:\n\t%s\n\t%s", k, util.AsJsonString(a), util.AsJsonString(e))
 			upsert = append(upsert, e)
 		}
 	}
@@ -94,7 +94,7 @@ func (t *NeighTable) Ensure(link netlink.Link, expected []*netlink.Neigh) error 
 	if len(upsert) != 0 {
 		for _, r := range upsert {
 			glog.Infof("NETLINK: ip neigh replace to %s lladdr %s dev %d", r.IP, r.HardwareAddr, r.LinkIndex)
-			glog.V(2).Infof(" full neigh: %v", routecontroller.AsJsonString(r))
+			glog.V(2).Infof(" full neigh: %v", util.AsJsonString(r))
 			err := netlink.NeighSet(r)
 			if err != nil {
 				return fmt.Errorf("error doing `ip neigh replace to %s lladdr %s dev %d`: %v", r.IP, r.HardwareAddr, r.LinkIndex, err)

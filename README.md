@@ -49,7 +49,9 @@ want it to allocate a CIDR to each Node, but the daemonset will configure connec
 Your cluster should start without networking, but pods on different nodes will not
 be able to communicate with each other.  They might not even be able to reach the API server.
 But that is OK, because kubelets talk to the master over the "real" network, not the overlay
-network.  So we can run daemonsets, they will schedule, bring up the network and all is well.
+network.  In addition, the designers of kubernetes set it up so that pods can talk to the API
+before the overlay network is in place (the `kubernetes` service is specially routed).  So
+we can run daemonsets, they will schedule, bring up the network and all is well.
 
 Daemonsets are included!
 

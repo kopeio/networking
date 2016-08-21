@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
-	"github.com/kopeio/route-controller/pkg/routecontroller"
+	"github.com/kopeio/route-controller/pkg/util"
 	"github.com/vishvananda/netlink"
 )
 
@@ -22,7 +22,7 @@ func (t *XfrmPolicyTable) Ensure(expected []*netlink.XfrmPolicy) error {
 	}
 
 	for _, p := range actual {
-		glog.Infof("Actual Policy: %v", routecontroller.AsJsonString(p))
+		glog.Infof("Actual Policy: %v", util.AsJsonString(p))
 	}
 
 	var create []*netlink.XfrmPolicy
@@ -37,7 +37,7 @@ func (t *XfrmPolicyTable) Ensure(expected []*netlink.XfrmPolicy) error {
 			p := &actual[i]
 			if xfrmPolicyMatches(p, e) {
 				if a != nil {
-					glog.Warningf("Found duplicate matching policies: %v and %v", routecontroller.AsJsonString(p), routecontroller.AsJsonString(a))
+					glog.Warningf("Found duplicate matching policies: %v and %v", util.AsJsonString(p), util.AsJsonString(a))
 				}
 				a = p
 				actualMatched[i] = true
@@ -66,7 +66,7 @@ func (t *XfrmPolicyTable) Ensure(expected []*netlink.XfrmPolicy) error {
 
 	if len(create) != 0 {
 		for _, p := range create {
-			glog.Infof("creating policy %v", routecontroller.AsJsonString(p))
+			glog.Infof("creating policy %v", util.AsJsonString(p))
 			err := netlink.XfrmPolicyAdd(p)
 			if err != nil {
 				return fmt.Errorf("error creating policy: %v", err)
@@ -76,7 +76,7 @@ func (t *XfrmPolicyTable) Ensure(expected []*netlink.XfrmPolicy) error {
 
 	if len(updates) != 0 {
 		for _, p := range updates {
-			glog.Infof("updating policy %v", routecontroller.AsJsonString(p))
+			glog.Infof("updating policy %v", util.AsJsonString(p))
 			err := netlink.XfrmPolicyUpdate(p)
 			if err != nil {
 				return fmt.Errorf("error updating policy: %v", err)
@@ -86,7 +86,7 @@ func (t *XfrmPolicyTable) Ensure(expected []*netlink.XfrmPolicy) error {
 
 	if len(remove) != 0 {
 		for _, p := range remove {
-			glog.Infof("removing policy %v", routecontroller.AsJsonString(p))
+			glog.Infof("removing policy %v", util.AsJsonString(p))
 			err := netlink.XfrmPolicyDel(p)
 			if err != nil {
 				return fmt.Errorf("error removing policy: %v", err)

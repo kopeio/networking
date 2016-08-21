@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
-	"github.com/kopeio/route-controller/pkg/routecontroller"
+	"github.com/kopeio/route-controller/pkg/util"
 	"github.com/vishvananda/netlink"
 )
 
@@ -26,7 +26,7 @@ func (p *XfrmStateTable) Ensure(expectedList []*netlink.XfrmState) error {
 	for i := range actualList {
 		a := &actualList[i]
 		actualMap[a.Spi] = a
-		glog.Infof("Actual State: %v", routecontroller.AsJsonString(a))
+		glog.Infof("Actual State: %v", util.AsJsonString(a))
 	}
 
 	expected := make(map[int]*netlink.XfrmState)
@@ -52,7 +52,7 @@ func (p *XfrmStateTable) Ensure(expectedList []*netlink.XfrmState) error {
 		}
 
 		if !xfrmStateEqual(a, e) {
-			glog.Infof("State change for %d:\n\t%s\n\t%s", spi, routecontroller.AsJsonString(a), routecontroller.AsJsonString(e))
+			glog.Infof("State change for %d:\n\t%s\n\t%s", spi, util.AsJsonString(a), util.AsJsonString(e))
 			updates = append(updates, e)
 		}
 	}
@@ -68,7 +68,7 @@ func (p *XfrmStateTable) Ensure(expectedList []*netlink.XfrmState) error {
 
 	if len(create) != 0 {
 		for _, p := range create {
-			glog.Infof("creating state %v", routecontroller.AsJsonString(p))
+			glog.Infof("creating state %v", util.AsJsonString(p))
 			err := netlink.XfrmStateAdd(p)
 			if err != nil {
 				return fmt.Errorf("error creating state %v: %v", p, err)
@@ -77,7 +77,7 @@ func (p *XfrmStateTable) Ensure(expectedList []*netlink.XfrmState) error {
 	}
 	if len(updates) != 0 {
 		for _, p := range updates {
-			glog.Infof("updating state %v", routecontroller.AsJsonString(p))
+			glog.Infof("updating state %v", util.AsJsonString(p))
 			err := netlink.XfrmStateUpdate(p)
 			if err != nil {
 				return fmt.Errorf("error updating state %v: %v", p, err)
@@ -87,7 +87,7 @@ func (p *XfrmStateTable) Ensure(expectedList []*netlink.XfrmState) error {
 
 	if len(remove) != 0 {
 		for _, p := range remove {
-			glog.Infof("removing state %v", routecontroller.AsJsonString(p))
+			glog.Infof("removing state %v", util.AsJsonString(p))
 			err := netlink.XfrmStateDel(p)
 			if err != nil {
 				return fmt.Errorf("error removing state: %v", err)

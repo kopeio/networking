@@ -27,6 +27,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/kopeio/route-controller/pkg/routing"
+	"github.com/kopeio/route-controller/pkg/routing/gre"
 	"github.com/kopeio/route-controller/pkg/routing/ipsec"
 	"github.com/kopeio/route-controller/pkg/routing/layer2"
 	"github.com/kopeio/route-controller/pkg/routing/vxlan"
@@ -64,9 +65,9 @@ var (
 
 	targetLinkName = flags.String("target", "eth0", "network link to use for actual packet transport")
 
-	ipsecEncryption = flags.String("ipsec-encryption", "aes", "encryption method to use (for IPSEC)")
+	ipsecEncryption     = flags.String("ipsec-encryption", "aes", "encryption method to use (for IPSEC)")
 	ipsecAuthentication = flags.String("ipsec-authentication", "sha1", "authentication method to use (for IPSEC)")
-	ipsecEncapsulation = flags.String("ipsec-encapsulation", "udp", "encapsulation method to use (for IPSEC)")
+	ipsecEncapsulation  = flags.String("ipsec-encapsulation", "udp", "encapsulation method to use (for IPSEC)")
 
 	// I can't figure out how to get a serviceaccount in a manifest-controlled pod
 	//inCluster = flags.Bool("running-in-cluster", true,
@@ -153,28 +154,26 @@ func main() {
 	switch *providerID {
 	case "layer2":
 		provider, err = layer2.NewLayer2RoutingProvider(*targetLinkName)
-	//case "mock":
-	//	provider, err = mockrouting.NewMockRoutingProvider()
-	//case "gre":
-	//	provider, err = grerouting.NewGreRoutingProvider()
+	case "gre":
+		provider, err = gre.NewGreRoutingProvider()
 	case "vxlan":
 		glog.Errorf("assuming overlay is 100.96.0.0/12")
 		_, overlayCIDR, _ := net.ParseCIDR("100.96.0.0/12")
 		provider, err = vxlan.NewVxlanRoutingProvider(overlayCIDR, *targetLinkName)
 	case "ipsec":
 		var authenticationStrategy ipsec.AuthenticationStrategy
-		var encryptionStrategy  ipsec.EncryptionStrategy
-		var encapsulationStrategy  ipsec.EncapsulationStrategy
+		var encryptionStrategy ipsec.EncryptionStrategy
+		var encapsulationStrategy ipsec.EncapsulationStrategy
 
-		switch (*ipsecEncryption) {
+		switch *ipsecEncryption {
 		case "none":
 			encryptionStrategy = &ipsec.PlaintextEncryptionStrategy{}
 		case "aes":
 			encryptionStrategy = &ipsec.AesEncryptionStrategy{}
-			default:
+		default:
 			glog.Fatalf("unknown ipsec-encryption: %v", *ipsecEncryption)
 		}
-		switch (*ipsecAuthentication) {
+		switch *ipsecAuthentication {
 		case "none":
 			authenticationStrategy = &ipsec.PlaintextAuthenticationStrategy{}
 		case "sha1":
@@ -182,7 +181,7 @@ func main() {
 		default:
 			glog.Fatalf("unknown ipsec-authentication: %v", *ipsecAuthentication)
 		}
-		switch (*ipsecEncapsulation) {
+		switch *ipsecEncapsulation {
 		case "udp":
 			encapsulationStrategy = &ipsec.UdpEncapsulationStrategy{}
 		case "esp":
