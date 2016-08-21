@@ -8,7 +8,6 @@ import (
 	"github.com/kopeio/route-controller/pkg/routing/netutil"
 	"github.com/vishvananda/netlink"
 	"net"
-	"strings"
 	"syscall"
 )
 
@@ -18,6 +17,7 @@ const tunnelTTL = 255 // TODO: What is the correct value for a GRE tunnel?
 // Note that with hex we are _exactly_ 15 characters
 const greLinkNamePrefix = "k8s-"
 const greLinkNameFormat = "k8s-%02x-%02x-%02x-%02x"
+const greLinkNameMaxLength = 15
 
 type GreRoutingProvider struct {
 	lastVersionApplied uint64
@@ -44,9 +44,15 @@ func (p *GreRoutingProvider) Close() error {
 func buildTunnelName(ip net.IP) string {
 	ip4 := ip.To4()
 	if ip4 == nil {
+		glog.Warningf("cannot build tunnel name with non-ipv4 IP: %v", ip)
 		return ""
 	}
-	return fmt.Sprintf(greLinkNameFormat, ip4[0], ip4[1], ip4[2], ip4[3])
+	name := fmt.Sprintf(greLinkNameFormat, ip4[0], ip4[1], ip4[2], ip4[3])
+	if len(name) > greLinkNameMaxLength {
+		glog.Warningf("generated link name that was longer than max: %q", name)
+		return ""
+	}
+	return name
 }
 
 func (p *GreRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
