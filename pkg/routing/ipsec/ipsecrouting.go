@@ -1,4 +1,4 @@
-package ipsecrouting
+package ipsec
 
 import (
 	"encoding/binary"

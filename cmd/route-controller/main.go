@@ -27,7 +27,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/kopeio/route-controller/pkg/routing"
-	"github.com/kopeio/route-controller/pkg/routing/ipsecrouting"
+	"github.com/kopeio/route-controller/pkg/routing/ipsec"
 	"github.com/kopeio/route-controller/pkg/routing/layer2"
 	"github.com/kopeio/route-controller/pkg/routing/vxlan"
 	"github.com/kopeio/route-controller/pkg/watchers"
@@ -162,37 +162,37 @@ func main() {
 		_, overlayCIDR, _ := net.ParseCIDR("100.96.0.0/12")
 		provider, err = vxlan.NewVxlanRoutingProvider(overlayCIDR, *targetLinkName)
 	case "ipsec":
-		var authenticationStrategy ipsecrouting.AuthenticationStrategy
-		var encryptionStrategy  ipsecrouting.EncryptionStrategy
-		var encapsulationStrategy  ipsecrouting.EncapsulationStrategy
+		var authenticationStrategy ipsec.AuthenticationStrategy
+		var encryptionStrategy  ipsec.EncryptionStrategy
+		var encapsulationStrategy  ipsec.EncapsulationStrategy
 
 		switch (*ipsecEncryption) {
 		case "none":
-			encryptionStrategy = &ipsecrouting.PlaintextEncryptionStrategy{}
+			encryptionStrategy = &ipsec.PlaintextEncryptionStrategy{}
 		case "aes":
-			encryptionStrategy = &ipsecrouting.AesEncryptionStrategy{}
+			encryptionStrategy = &ipsec.AesEncryptionStrategy{}
 			default:
 			glog.Fatalf("unknown ipsec-encryption: %v", *ipsecEncryption)
 		}
 		switch (*ipsecAuthentication) {
 		case "none":
-			authenticationStrategy = &ipsecrouting.PlaintextAuthenticationStrategy{}
+			authenticationStrategy = &ipsec.PlaintextAuthenticationStrategy{}
 		case "sha1":
-			authenticationStrategy = &ipsecrouting.HmacSha1AuthenticationStrategy{}
+			authenticationStrategy = &ipsec.HmacSha1AuthenticationStrategy{}
 		default:
 			glog.Fatalf("unknown ipsec-authentication: %v", *ipsecAuthentication)
 		}
 		switch (*ipsecEncapsulation) {
 		case "udp":
-			encapsulationStrategy = &ipsecrouting.UdpEncapsulationStrategy{}
+			encapsulationStrategy = &ipsec.UdpEncapsulationStrategy{}
 		case "esp":
-			encapsulationStrategy = &ipsecrouting.EspEncapsulationStrategy{}
+			encapsulationStrategy = &ipsec.EspEncapsulationStrategy{}
 		default:
 			glog.Fatalf("unknown ipsec-encapsulation: %v", *ipsecEncapsulation)
 		}
 
-		var ipsecProvider *ipsecrouting.IpsecRoutingProvider
-		ipsecProvider, err = ipsecrouting.NewIpsecRoutingProvider(authenticationStrategy, encryptionStrategy, encapsulationStrategy)
+		var ipsecProvider *ipsec.IpsecRoutingProvider
+		ipsecProvider, err = ipsec.NewIpsecRoutingProvider(authenticationStrategy, encryptionStrategy, encapsulationStrategy)
 		if err == nil {
 			// TODO: This is only because state update is not working
 			glog.Warningf("TODO Doing ip xfrm flush; remove!!")

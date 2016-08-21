@@ -1,4 +1,4 @@
-package ipsecrouting
+package ipsec
 
 import (
 	"github.com/kopeio/route-controller/pkg/routing"
