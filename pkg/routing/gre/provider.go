@@ -14,6 +14,11 @@ import (
 
 const tunnelTTL = 255 // TODO: What is the correct value for a GRE tunnel?
 
+// Length of GRE tunnel name must be <= 15 characters
+// Note that with hex we are _exactly_ 15 characters
+const greLinkNamePrefix = "k8s-"
+const greLinkNameFormat = "k8s-%02x-%02x-%02x-%02x"
+
 type GreRoutingProvider struct {
 	lastVersionApplied uint64
 
@@ -36,6 +41,14 @@ func (p *GreRoutingProvider) Close() error {
 	return nil
 }
 
+func buildTunnelName(ip net.IP) string {
+	ip4 := ip.To4()
+	if ip4 == nil {
+		return ""
+	}
+	return fmt.Sprintf(greLinkNameFormat, ip4[0], ip4[1], ip4[2], ip4[3])
+}
+
 func (p *GreRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 	if p.lastVersionApplied != 0 && nodeMap.IsVersion(p.lastVersionApplied) {
 		return nil
@@ -46,8 +59,6 @@ func (p *GreRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 	if me == nil {
 		return fmt.Errorf("Cannot find local node")
 	}
-
-	prefix := "k8s-"
 
 	var tunnels []netlink.Link
 
@@ -67,7 +78,11 @@ func (p *GreRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 			continue
 		}
 
-		tunnelName := prefix + strings.Replace(remote.PodCIDR.IP.String(), ".", "-", -1)
+		tunnelName := buildTunnelName(remote.PodCIDR.IP)
+		if tunnelName == "" {
+			glog.Infof("Node %q has unacceptable PodCIDR %q", remote.Name, remote.PodCIDR.IP)
+			continue
+		}
 
 		// ip tunnel add $name mode gre remote $remoteIP local $localIP`
 		{
@@ -83,7 +98,7 @@ func (p *GreRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 		}
 	}
 
-	tunnelMap, err := p.links.Ensure(tunnels, prefix)
+	tunnelMap, err := p.links.Ensure(tunnels, greLinkNamePrefix)
 	if err != nil {
 		return fmt.Errorf("error configuring tunnels: %v", err)
 	}
@@ -121,7 +136,12 @@ func (p *GreRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 			continue
 		}
 
-		tunnelName := prefix + strings.Replace(remote.PodCIDR.IP.String(), ".", "-", -1)
+		tunnelName := buildTunnelName(remote.PodCIDR.IP)
+		if tunnelName == "" {
+			glog.Infof("Node %q has unacceptable PodCIDR %q", remote.Name, remote.PodCIDR.IP)
+			continue
+		}
+
 		tunnel := tunnelMap[tunnelName]
 		if tunnel == nil {
 			return fmt.Errorf("tunnel not found after being created: %q", tunnelName)
