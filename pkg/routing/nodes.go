@@ -18,6 +18,7 @@ type NodeMap struct {
 	mePredicate NodePredicate
 
 	mutex   sync.Mutex
+	ready   bool
 	nodes   map[string]*NodeInfo
 	version uint64
 	me      *NodeInfo
@@ -30,9 +31,20 @@ func (m *NodeMap) IsVersion(version uint64) bool {
 	return m.version == version
 }
 
+func (m *NodeMap) IsReady() bool {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	return m.ready
+}
+
 func (m *NodeMap) Snapshot() (*NodeInfo, []NodeInfo, uint64) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
+
+	if !m.ready {
+		return nil, nil, 0
+	}
 
 	nodes := make([]NodeInfo, 0, len(m.nodes))
 	for _, node := range m.nodes {
@@ -46,6 +58,10 @@ func (m *NodeMap) Snapshot() (*NodeInfo, []NodeInfo, uint64) {
 }
 
 func (m *NodeMap) MarkReady() {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	m.ready = true
 }
 
 func (m *NodeMap) RemoveNode(node *v1.Node) {

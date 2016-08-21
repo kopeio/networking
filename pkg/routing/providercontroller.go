@@ -33,6 +33,14 @@ func (c *Controller) Run() {
 
 func (c *Controller) runWatcher() {
 	for {
+		if c.nodeMap.IsReady() {
+			break
+		}
+		glog.Infof("node map not yet ready")
+		time.Sleep(1 * time.Second)
+	}
+	glog.Infof("node map is ready")
+	for {
 		err := c.provider.EnsureCIDRs(c.nodeMap)
 
 		if err != nil {

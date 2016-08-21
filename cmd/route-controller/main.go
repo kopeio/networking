@@ -230,7 +230,6 @@ func main() {
 	go handleSigterm(c)
 
 	for {
-		glog.Infof("Handled quit, awaiting pod deletion")
 		time.Sleep(30 * time.Second)
 	}
 

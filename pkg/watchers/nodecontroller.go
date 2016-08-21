@@ -58,7 +58,7 @@ func (c *NodeController) runWatcher(stopCh <-chan struct{}) {
 		}
 		for i := range nodeList.Items {
 			node := &nodeList.Items[i]
-			glog.Infof("node: %v", node.Name)
+			//glog.V(1).Infof("node list: %v", node.Name)
 			c.nodeMap.UpdateNode(node)
 		}
 		c.nodeMap.MarkReady()

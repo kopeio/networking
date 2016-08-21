@@ -74,7 +74,7 @@ func (t *Links) Ensure(expected []netlink.Link, prefix string) (map[string]netli
 
 	if len(remove) != 0 {
 		for _, l := range remove {
-			glog.Infof("NETLINK: ip link del %v", util.AsJsonString(l))
+			glog.Infof("NETLINK: ip link del %s", l.Attrs().Name)
 			err := netlink.LinkDel(l)
 			if err != nil {
 				return nil, fmt.Errorf("error removing link: %v", err)
@@ -84,7 +84,7 @@ func (t *Links) Ensure(expected []netlink.Link, prefix string) (map[string]netli
 
 	if len(create) != 0 {
 		for _, l := range create {
-			glog.Infof("NETLINK: ip link create %v", l)
+			glog.Infof("NETLINK: ip link create %s", l.Attrs().Name)
 			glog.V(2).Infof(" full link object: %v", util.AsJsonString(l))
 			err := netlink.LinkAdd(l)
 			if err != nil {

@@ -26,7 +26,11 @@ spec:
             privileged: true
           image: kope/route-controller
           name: kope-routing
-          command: [ "/usr/bin/route-controller", "--provider=gre", "--system-uuid", "/sys/class/dmi/id/product_uuid", "--v=4" ]
+          command:
+            - /usr/bin/route-controller
+            - --provider=gre
+            - --system-uuid=/sys/class/dmi/id/product_uuid
+            - --v=1
           volumeMounts:
             - name: lib-modules
               mountPath: /lib/modules
