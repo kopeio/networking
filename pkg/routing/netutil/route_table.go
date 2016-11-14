@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
-	"github.com/kopeio/route-controller/pkg/util"
 	"github.com/vishvananda/netlink"
+	"kope.io/krouton/pkg/util"
 )
 
 type RouteTable struct {

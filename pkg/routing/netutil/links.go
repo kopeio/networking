@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
-	"github.com/kopeio/route-controller/pkg/util"
 	"github.com/vishvananda/netlink"
+	"kope.io/krouton/pkg/util"
 	"strings"
 )
 
@@ -108,38 +108,38 @@ func linkEqual(a, e netlink.Link) bool {
 		return false
 	}
 	switch a.Type() {
-	case "gre":
-		return greLinkEqual(a.(*netlink.Gre), e.(*netlink.Gre))
+	//case "gre":
+	//	return greLinkEqual(a.(*netlink.Gre), e.(*netlink.Gre))
 	default:
 		glog.Warningf("Unhandled type %q", a.Type())
 		return true
 	}
 }
 
-func greLinkEqual(a, e *netlink.Gre) bool {
-	if !ipEqual(a.Local, e.Local) {
-		return false
-	}
-	if !ipEqual(a.Remote, e.Remote) {
-		return false
-	}
-	if a.Ttl != e.Ttl {
-		return false
-	}
-	if a.IFlags != e.IFlags {
-		return false
-	}
-	if a.OFlags != e.OFlags {
-		return false
-	}
-	if a.PMtuDisc != e.PMtuDisc {
-		return false
-	}
-	if a.Tos != e.Tos {
-		return false
-	}
-	if a.Link != e.Link {
-		return false
-	}
-	return true
-}
+//func greLinkEqual(a, e *netlink.Gre) bool {
+//	if !ipEqual(a.Local, e.Local) {
+//		return false
+//	}
+//	if !ipEqual(a.Remote, e.Remote) {
+//		return false
+//	}
+//	if a.Ttl != e.Ttl {
+//		return false
+//	}
+//	if a.IFlags != e.IFlags {
+//		return false
+//	}
+//	if a.OFlags != e.OFlags {
+//		return false
+//	}
+//	if a.PMtuDisc != e.PMtuDisc {
+//		return false
+//	}
+//	if a.Tos != e.Tos {
+//		return false
+//	}
+//	if a.Link != e.Link {
+//		return false
+//	}
+//	return true
+//}

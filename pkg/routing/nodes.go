@@ -7,8 +7,8 @@ import (
 
 	"bytes"
 	"github.com/golang/glog"
-	"github.com/kopeio/route-controller/pkg/util"
-	"k8s.io/kubernetes/pkg/api/v1"
+	"k8s.io/client-go/pkg/api/v1"
+	"kope.io/krouton/pkg/util"
 )
 
 type NodePredicate func(node *v1.Node) bool

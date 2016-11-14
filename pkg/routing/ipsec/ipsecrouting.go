@@ -7,9 +7,9 @@ import (
 	"syscall"
 
 	"github.com/golang/glog"
-	"github.com/kopeio/route-controller/pkg/routing"
-	"github.com/kopeio/route-controller/pkg/routing/netutil"
 	"github.com/vishvananda/netlink"
+	"kope.io/krouton/pkg/routing"
+	"kope.io/krouton/pkg/routing/netutil"
 	"os/exec"
 )
 

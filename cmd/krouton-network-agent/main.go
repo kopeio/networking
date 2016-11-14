@@ -18,25 +18,23 @@ package main
 
 import (
 	goflag "flag"
+	"github.com/golang/glog"
+	"github.com/spf13/pflag"
 	"io/ioutil"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/rest"
+	"kope.io/krouton/pkg/routing"
+	"kope.io/krouton/pkg/routing/ipsec"
+	"kope.io/krouton/pkg/routing/layer2"
+	"kope.io/krouton/pkg/routing/vxlan"
+	"kope.io/krouton/pkg/watchers"
+	"net"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 	"time"
-
-	"github.com/golang/glog"
-	"github.com/kopeio/route-controller/pkg/routing"
-	"github.com/kopeio/route-controller/pkg/routing/gre"
-	"github.com/kopeio/route-controller/pkg/routing/ipsec"
-	"github.com/kopeio/route-controller/pkg/routing/layer2"
-	"github.com/kopeio/route-controller/pkg/routing/vxlan"
-	"github.com/kopeio/route-controller/pkg/watchers"
-	"github.com/spf13/pflag"
-	"k8s.io/kubernetes/pkg/api/v1"
-	client "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_3/typed/core/v1"
-	kubectl_util "k8s.io/kubernetes/pkg/kubectl/cmd/util"
-	"net"
 )
 
 //const (
@@ -46,7 +44,7 @@ import (
 var (
 	// value overwritten during build. This can be used to resolve issues.
 	version = "0.5"
-	gitRepo = "https://github.com/kopeio/route-controller"
+	gitRepo = "https://github.com/kopeio/krouton"
 
 	flags = pflag.NewFlagSet("", pflag.ExitOnError)
 
@@ -84,19 +82,18 @@ func main() {
 	goflag.Set("logtostderr", "true")
 
 	flags.AddGoFlagSet(goflag.CommandLine)
-	clientConfig := kubectl_util.DefaultClientConfig(flags)
 
 	flags.Parse(os.Args)
 
 	glog.Infof("Using build: %v - %v", gitRepo, version)
 
-	config, err := clientConfig.ClientConfig()
+	config, err := rest.InClusterConfig()
 	if err != nil {
 		glog.Errorf("error building client configuration: %v", err)
 		os.Exit(1)
 	}
 
-	kubeClient, err := client.NewForConfig(config)
+	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		glog.Fatalf("error building REST client: %v", err)
 	}
@@ -155,7 +152,8 @@ func main() {
 	case "layer2":
 		provider, err = layer2.NewLayer2RoutingProvider(*targetLinkName)
 	case "gre":
-		provider, err = gre.NewGreRoutingProvider()
+		glog.Fatalf("GRE temporarily not enabled - until patch goes upstream")
+		// provider, err = gre.NewGreRoutingProvider()
 	case "vxlan":
 		glog.Errorf("assuming overlay is 100.96.0.0/12")
 		_, overlayCIDR, _ := net.ParseCIDR("100.96.0.0/12")

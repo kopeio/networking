@@ -1,3 +1,10 @@
-.build/
-vendor/
+# IntelliJ
+*.iml
+
+# Bazel
+bazel-bin
+bazel-genfiles
+bazel-krouton
+bazel-out
+bazel-testlogs
 

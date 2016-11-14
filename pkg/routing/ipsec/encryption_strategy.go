@@ -1,8 +1,8 @@
 package ipsec
 
 import (
-	"github.com/kopeio/route-controller/pkg/routing"
 	"github.com/vishvananda/netlink"
+	"kope.io/krouton/pkg/routing"
 )
 
 type EncryptionStrategy interface {
