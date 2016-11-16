@@ -20,7 +20,7 @@ spec:
               cpu: 0.20
           securityContext:
             privileged: true
-          image: kopeio/networking-agent
+          image: kopeio/networking-agent:1.0.20161116
           name: networking-agent
           volumeMounts:
             - name: lib-modules
