@@ -32,6 +32,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -45,43 +46,30 @@ var (
 	// value overwritten during build. This can be used to resolve issues.
 	version = "0.5"
 	gitRepo = "https://github.com/kopeio/krouton"
-
-	flags = pflag.NewFlagSet("", pflag.ExitOnError)
-
-	resyncPeriod = flags.Duration("sync-period", 30*time.Second,
-		`Relist and confirm cloud resources this often.`)
-
-	//healthzPort = flags.Int("healthz-port", healthPort, "port for healthz endpoint.")
-
-	//kubeConfig = flags.String("kubeconfig", "", "Path to kubeconfig file with authorization information.")
-
-	nodeName       = flags.String("node-name", "", "name of this node")
-	machineIDPath  = flags.String("machine-id", "", "path to file containing machine id (as set in node status)")
-	systemUUIDPath = flags.String("system-uuid", "", "path to file containing system-uuid (as set in node status)")
-	bootIDPath     = flags.String("boot-id", "", "path to file containing boot-id (as set in node status)")
-	providerID     = flags.String("provider", "gre", "route backend to use")
-
-	targetLinkName = flags.String("target", "eth0", "network link to use for actual packet transport")
-
-	ipsecEncryption     = flags.String("ipsec-encryption", "aes", "encryption method to use (for IPSEC)")
-	ipsecAuthentication = flags.String("ipsec-authentication", "sha1", "authentication method to use (for IPSEC)")
-	ipsecEncapsulation  = flags.String("ipsec-encapsulation", "udp", "encapsulation method to use (for IPSEC)")
-
-	// I can't figure out how to get a serviceaccount in a manifest-controlled pod
-	//inCluster = flags.Bool("running-in-cluster", true,
-	//	`Optional, if this controller is running in a kubernetes cluster, use the
-	//	 pod secrets for creating a Kubernetes client.`)
-
-	profiling = flags.Bool("profiling", true, `Enable profiling via web interface host:port/debug/pprof/`)
 )
 
 func main() {
+	options := &Options{}
+	options.InitDefaults()
+
+	err := options.LoadFrom("/config/config.yaml")
+	if err != nil && !os.IsNotExist(err) {
+		glog.Fatalf("error reading config file: %v", err)
+	}
+
+	flags := pflag.NewFlagSet("", pflag.ExitOnError)
+	options.AddFlags(flags)
+
 	// Trick to avoid 'logging before flag.Parse' warning
 	goflag.CommandLine.Parse([]string{})
 
 	goflag.Set("logtostderr", "true")
 
 	flags.AddGoFlagSet(goflag.CommandLine)
+
+	if options.LogLevel != nil {
+		goflag.Set("v", strconv.Itoa(*options.LogLevel))
+	}
 
 	flags.Parse(os.Args)
 
@@ -99,10 +87,10 @@ func main() {
 	}
 
 	var matcher func(node *v1.Node) bool
-	if *machineIDPath != "" {
-		b, err := ioutil.ReadFile(*machineIDPath)
+	if options.MachineIDPath != "" {
+		b, err := ioutil.ReadFile(options.MachineIDPath)
 		if err != nil {
-			glog.Fatalf("error reading machine-id file %q: %v", *machineIDPath, err)
+			glog.Fatalf("error reading machine-id file %q: %v", options.MachineIDPath, err)
 		}
 		machineID := string(b)
 		machineID = strings.TrimSpace(machineID)
@@ -110,20 +98,20 @@ func main() {
 		matcher = func(node *v1.Node) bool {
 			return node.Status.NodeInfo.MachineID == machineID
 		}
-	} else if *systemUUIDPath != "" {
-		b, err := ioutil.ReadFile(*systemUUIDPath)
+	} else if options.SystemUUIDPath != "" {
+		b, err := ioutil.ReadFile(options.SystemUUIDPath)
 		if err != nil {
-			glog.Fatalf("error reading system-uuid file %q: %v", *systemUUIDPath, err)
+			glog.Fatalf("error reading system-uuid file %q: %v", options.SystemUUIDPath, err)
 		}
 		systemUUID := string(b)
 		systemUUID = strings.TrimSpace(systemUUID)
 		matcher = func(node *v1.Node) bool {
 			return node.Status.NodeInfo.SystemUUID == systemUUID
 		}
-	} else if *bootIDPath != "" {
-		b, err := ioutil.ReadFile(*bootIDPath)
+	} else if options.BootIDPath != "" {
+		b, err := ioutil.ReadFile(options.BootIDPath)
 		if err != nil {
-			glog.Fatalf("error reading boot-id file %q: %v", *bootIDPath, err)
+			glog.Fatalf("error reading boot-id file %q: %v", options.BootIDPath, err)
 		}
 		bootID := string(b)
 		bootID = strings.TrimSpace(bootID)
@@ -131,7 +119,7 @@ func main() {
 			return node.Status.NodeInfo.BootID == bootID
 		}
 	} else {
-		matchNodeName := *nodeName
+		matchNodeName := options.NodeName
 		if matchNodeName == "" {
 			hostname, err := os.Hostname()
 			if err != nil {
@@ -148,44 +136,44 @@ func main() {
 	nodeMap := routing.NewNodeMap(matcher)
 
 	var provider routing.Provider
-	switch *providerID {
+	switch options.Provider {
 	case "layer2":
-		provider, err = layer2.NewLayer2RoutingProvider(*targetLinkName)
+		provider, err = layer2.NewLayer2RoutingProvider(options.TargetLinkName)
 	case "gre":
 		glog.Fatalf("GRE temporarily not enabled - until patch goes upstream")
-		// provider, err = gre.NewGreRoutingProvider()
+	// provider, err = gre.NewGreRoutingProvider()
 	case "vxlan":
 		glog.Errorf("assuming overlay is 100.96.0.0/12")
 		_, overlayCIDR, _ := net.ParseCIDR("100.96.0.0/12")
-		provider, err = vxlan.NewVxlanRoutingProvider(overlayCIDR, *targetLinkName)
+		provider, err = vxlan.NewVxlanRoutingProvider(overlayCIDR, options.TargetLinkName)
 	case "ipsec":
 		var authenticationStrategy ipsec.AuthenticationStrategy
 		var encryptionStrategy ipsec.EncryptionStrategy
 		var encapsulationStrategy ipsec.EncapsulationStrategy
 
-		switch *ipsecEncryption {
+		switch options.IPSEC.Encryption {
 		case "none":
 			encryptionStrategy = &ipsec.PlaintextEncryptionStrategy{}
 		case "aes":
 			encryptionStrategy = &ipsec.AesEncryptionStrategy{}
 		default:
-			glog.Fatalf("unknown ipsec-encryption: %v", *ipsecEncryption)
+			glog.Fatalf("unknown ipsec-encryption: %v", options.IPSEC.Encryption)
 		}
-		switch *ipsecAuthentication {
+		switch options.IPSEC.Authentication {
 		case "none":
 			authenticationStrategy = &ipsec.PlaintextAuthenticationStrategy{}
 		case "sha1":
 			authenticationStrategy = &ipsec.HmacSha1AuthenticationStrategy{}
 		default:
-			glog.Fatalf("unknown ipsec-authentication: %v", *ipsecAuthentication)
+			glog.Fatalf("unknown ipsec-authentication: %v", options.IPSEC.Authentication)
 		}
-		switch *ipsecEncapsulation {
+		switch options.IPSEC.Encapsulation {
 		case "udp":
 			encapsulationStrategy = &ipsec.UdpEncapsulationStrategy{}
 		case "esp":
 			encapsulationStrategy = &ipsec.EspEncapsulationStrategy{}
 		default:
-			glog.Fatalf("unknown ipsec-encapsulation: %v", *ipsecEncapsulation)
+			glog.Fatalf("unknown ipsec-encapsulation: %v", options.IPSEC.Encapsulation)
 		}
 
 		var ipsecProvider *ipsec.IpsecRoutingProvider
@@ -201,11 +189,11 @@ func main() {
 		provider = ipsecProvider
 
 	default:
-		glog.Fatalf("provider not known: %q", *providerID)
+		glog.Fatalf("provider not known: %q", options.Provider)
 	}
 
 	if err != nil {
-		glog.Fatalf("failed to build provider %q: %v", *providerID, err)
+		glog.Fatalf("failed to build provider %q: %v", options.Provider, err)
 	}
 
 	//c, err := newRouteController(kubeClient, *resyncPeriod, *nodeName, bootID, systemUUID, machineID, provider)

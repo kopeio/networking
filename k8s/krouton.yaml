@@ -1,0 +1,32 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: krouton
+  namespace: kube-system
+  labels:
+    k8s-addon: krouton.addons.k8s.io
+spec:
+  template:
+    metadata:
+      labels:
+        name: krouton
+    spec:
+      hostPID: true
+      hostIPC: true
+      hostNetwork: true
+      containers:
+        - resources:
+            requests:
+              cpu: 0.20
+          securityContext:
+            privileged: true
+          image: kopeio/krouton-network-agent
+          name: krouton-network-agent
+          volumeMounts:
+            - name: lib-modules
+              mountPath: /lib/modules
+              readOnly: true
+      volumes:
+        - name: lib-modules
+          hostPath:
+            path: /lib/modules
