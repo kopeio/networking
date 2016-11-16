@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/vishvananda/netlink"
-	"kope.io/krouton/pkg/util"
+	"kope.io/networking/pkg/util"
 )
 
 type RouteTable struct {

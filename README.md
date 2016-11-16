@@ -2,7 +2,7 @@
 
 **Status: Moving from experimental to alpha.**
 
-kope-routing is the easiest networking controller for kubernetes.
+kopeio-networking is the easiest networking controller for kubernetes.
 
 It is kubernetes-native, meaning that it uses the Kubernetes API to manage state (no second source
 of truth), and installation is simply a matter of installing a daemonset.
@@ -14,12 +14,12 @@ node.  Though the other modes are less simple to configure, they all boil down t
 `ip link` manipulation (though VXLAN has an ARP helper process).   Alongside each routing option there is
 documentation on what is actually going on under the covers.
 
-kops-routing is not tied to a particular cloud provider.  VXLAN and IPSEC should work
+kopeio-networking is not tied to a particular cloud provider.  VXLAN and IPSEC should work
 everywhere UDP is supported!
 
 ## Transport Choices
 
-kops-routing is also relatively transport agnostic, supporting several different modes:
+kopeio-networking is also relatively transport agnostic, supporting several different modes:
 
 * `layer2` requires Layer-2 networking connectivity, and is thus primarily useful on bare
 metal (though it also works on AWS in a single AZ & subnet).  It sets up a `ip route` for
@@ -57,10 +57,10 @@ Daemonsets are included!
 
 Simply create the appropriate daemonset:
 
-* `layer2`: `kubectl create -f https://raw.githubusercontent.com/kopeio/kope-routing/master/k8s/layer2.yaml`
-* `vxlan`: `kubectl create -f https://raw.githubusercontent.com/kopeio/kope-routing/master/k8s/vxlan.yaml`
-* `ipsec-plaintext`: `kubectl create -f https://raw.githubusercontent.com/kopeio/kope-routing/master/k8s/ipsec-plaintext.yaml`
-* `ipsec-encrypted` (not yet secure!): `kubectl create -f https://raw.githubusercontent.com/kopeio/kope-routing/master/k8s/ipsec-encrypted.yaml`
+* `layer2`: `kubectl create -f https://raw.githubusercontent.com/kopeio/networking/master/k8s/layer2.yaml`
+* `vxlan`: `kubectl create -f https://raw.githubusercontent.com/kopeio/networking/master/k8s/vxlan.yaml`
+* `ipsec-plaintext`: `kubectl create -f https://raw.githubusercontent.com/kopeio/networking/master/k8s/ipsec-plaintext.yaml`
+* `ipsec-encrypted` (not yet secure!): `kubectl create -f https://raw.githubusercontent.com/kopeio/networking/master/k8s/ipsec-encrypted.yaml`
 
 
 You can of course clone this repository and work from the filesystem instead.

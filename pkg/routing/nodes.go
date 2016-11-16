@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"github.com/golang/glog"
 	"k8s.io/client-go/pkg/api/v1"
-	"kope.io/krouton/pkg/util"
+	"kope.io/networking/pkg/util"
 )
 
 type NodePredicate func(node *v1.Node) bool

@@ -2,7 +2,7 @@ package ipsec
 
 import (
 	"github.com/vishvananda/netlink"
-	"kope.io/krouton/pkg/routing"
+	"kope.io/networking/pkg/routing"
 	"net"
 )
 

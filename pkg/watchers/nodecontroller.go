@@ -6,8 +6,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/watch"
-	"kope.io/krouton/pkg/routing"
-	"kope.io/krouton/pkg/util"
+	"kope.io/networking/pkg/routing"
+	"kope.io/networking/pkg/util"
 	"time"
 )
 

@@ -8,7 +8,7 @@ load(
 )
 
 go_binary(
-    name = "krouton-network-agent",
+    name = "networking-agent",
     srcs = [
         "main.go",
         "options.go",

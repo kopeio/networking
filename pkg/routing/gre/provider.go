@@ -5,8 +5,8 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/vishvananda/netlink"
-	"kope.io/krouton/pkg/routing"
-	"kope.io/krouton/pkg/routing/netutil"
+	"kope.io/networking/pkg/routing"
+	"kope.io/networking/pkg/routing/netutil"
 	"net"
 	"syscall"
 )

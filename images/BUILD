@@ -25,11 +25,11 @@ docker_build(
 
 # TODO: Probably need kmod also
 docker_build(
-    name = "krouton-network-agent",
+    name = "networking-agent",
     base = ":busybox-libc",
-    cmd = ["/krouton-network-agent"],
+    cmd = ["/networking-agent"],
     files = [
-        "//cmd/krouton-network-agent",
+        "//cmd/networking-agent",
     ],
     repository = "kopeio",
 )

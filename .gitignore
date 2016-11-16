@@ -4,7 +4,7 @@
 # Bazel
 bazel-bin
 bazel-genfiles
-bazel-krouton
+bazel-networking
 bazel-out
 bazel-testlogs
 

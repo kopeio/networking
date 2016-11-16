@@ -24,11 +24,11 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/rest"
-	"kope.io/krouton/pkg/routing"
-	"kope.io/krouton/pkg/routing/ipsec"
-	"kope.io/krouton/pkg/routing/layer2"
-	"kope.io/krouton/pkg/routing/vxlan"
-	"kope.io/krouton/pkg/watchers"
+	"kope.io/networking/pkg/routing"
+	"kope.io/networking/pkg/routing/ipsec"
+	"kope.io/networking/pkg/routing/layer2"
+	"kope.io/networking/pkg/routing/vxlan"
+	"kope.io/networking/pkg/watchers"
 	"net"
 	"os"
 	"os/signal"
@@ -45,7 +45,7 @@ import (
 var (
 	// value overwritten during build. This can be used to resolve issues.
 	version = "0.5"
-	gitRepo = "https://github.com/kopeio/krouton"
+	gitRepo = "https://github.com/kopeio/networking"
 )
 
 func main() {

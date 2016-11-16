@@ -1,6 +1,9 @@
 # TODO: Move entirely to bazel?
 .PHONY: images
 
+DOCKER_REGISTRY?=kopeio
+DOCKER_TAG=20161116
+
 all: images
 
 gofmt:
@@ -8,7 +11,7 @@ gofmt:
 	gofmt -w -s pkg/
 
 push: images
-	docker push kopeio/krouton-network-agent:latest
+	docker push ${DOCKER_REGISTRY}/networking-agent:${DOCKER_TAG}
 
 images:
-	bazel run //images:krouton-network-agent kopeio/krouton-network-agent:latest
+	bazel run //images:networking-agent ${DOCKER_REGISTRY}/networking-agent:${DOCKER_TAG}
