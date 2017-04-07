@@ -15,8 +15,11 @@ go_library(
         "providercontroller.go",
     ],
     deps = [
-        "@com_github_golang_glog//:go_default_library",
-        "@io_k8s_client_go//pkg/api/v1:go_default_library",
         "//pkg/util:go_default_library",
+        "@com_github_golang_glog//:go_default_library",
+        "@io_k8s_client_go//kubernetes:go_default_library",
+        "@io_k8s_client_go//pkg/api/errors:go_default_library",
+        "@io_k8s_client_go//pkg/api/unversioned:go_default_library",
+        "@io_k8s_client_go//pkg/api/v1:go_default_library",
     ],
 )

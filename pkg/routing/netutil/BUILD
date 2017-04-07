@@ -19,8 +19,8 @@ go_library(
         "xfrm_state_table.go",
     ],
     deps = [
+        "//pkg/util:go_default_library",
         "@com_github_golang_glog//:go_default_library",
         "@com_github_vishvananda_netlink//:go_default_library",
-        "//pkg/util:go_default_library",
     ],
 )

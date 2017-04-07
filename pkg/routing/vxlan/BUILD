@@ -14,10 +14,10 @@ go_library(
         "vxlanrouting.go",
     ],
     deps = [
+        "//pkg/routing:go_default_library",
+        "//pkg/routing/netutil:go_default_library",
         "@com_github_golang_glog//:go_default_library",
         "@com_github_vishvananda_netlink//:go_default_library",
         "@com_github_vishvananda_netlink//nl:go_default_library",
-        "//pkg/routing:go_default_library",
-        "//pkg/routing/netutil:go_default_library",
     ],
 )

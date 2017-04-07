@@ -13,7 +13,5 @@ go_library(
         "format.go",
         "stoppable.go",
     ],
-    deps = [
-        "@com_github_golang_glog//:go_default_library",
-    ],
+    deps = ["@com_github_golang_glog//:go_default_library"],
 )

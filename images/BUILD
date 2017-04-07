@@ -20,6 +20,8 @@ docker_build(
     base = ":busybox",
     debs = [
         "@libc_deb//file",
+	"@libstdcpp6_deb//file",
+	"@libgcc1_deb//file",
     ],
 )
 
