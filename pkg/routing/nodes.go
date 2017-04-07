@@ -17,11 +17,11 @@ type NodeMap struct {
 	util.Stoppable
 	mePredicate NodePredicate
 
-	mutex   sync.Mutex
-	ready   bool
-	nodes   map[string]*NodeInfo
-	version uint64
-	me      *NodeInfo
+	mutex       sync.Mutex
+	ready       bool
+	nodes       map[string]*NodeInfo
+	version     uint64
+	me          *NodeInfo
 }
 
 func (m *NodeMap) IsVersion(version uint64) bool {
@@ -115,9 +115,10 @@ func NewNodeMap(mePredicate NodePredicate) *NodeMap {
 
 // NodeInfo contains the subset of the node information that we care about
 type NodeInfo struct {
-	Name    string
-	Address net.IP
-	PodCIDR *net.IPNet
+	Name             string
+	Address          net.IP
+	PodCIDR          *net.IPNet
+	NetworkAvailable bool
 }
 
 func (n *NodeInfo) update(src *v1.Node) bool {
@@ -177,6 +178,30 @@ func (n *NodeInfo) update(src *v1.Node) bool {
 			}
 		} else if !n.Address.Equal(a) {
 			n.Address = a
+			changed = true
+		}
+	}
+
+	{
+		networkAvailable := true
+		for _, condition := range src.Status.Conditions {
+			if condition.Type == v1.NodeNetworkUnavailable {
+				switch condition.Status {
+				case v1.ConditionFalse:
+					// Double negative: Not unavailable
+					networkAvailable = true
+				case v1.ConditionTrue:
+					// It is true that it is unavailable => available=false
+					networkAvailable = false
+				case v1.ConditionUnknown:
+					glog.V(2).Infof("NodeNetworkAvailable status was ConditionUnknown - assuming available")
+				default:
+					glog.Warningf("NodeNetworkAvailable status was %q - assuming available")
+				}
+			}
+		}
+		if networkAvailable != n.NetworkAvailable {
+			n.NetworkAvailable = networkAvailable
 			changed = true
 		}
 	}

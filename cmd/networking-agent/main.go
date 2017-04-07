@@ -207,7 +207,7 @@ func main() {
 	}
 	go c.Run()
 
-	rc, err := routing.NewController(nodeMap, provider)
+	rc, err := routing.NewController(kubeClient, nodeMap, provider)
 	if err != nil {
 		glog.Fatalf("Failed to build routing controller: %v", err)
 	}
