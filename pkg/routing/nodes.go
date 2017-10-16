@@ -1,14 +1,13 @@
 package routing
 
 import (
+	"bytes"
+	"github.com/golang/glog"
+	"k8s.io/api/core/v1"
+	"kope.io/networking/pkg/util"
 	"net"
 	"sort"
 	"sync"
-
-	"bytes"
-	"github.com/golang/glog"
-	"k8s.io/client-go/pkg/api/v1"
-	"kope.io/networking/pkg/util"
 )
 
 type NodePredicate func(node *v1.Node) bool
@@ -17,11 +16,11 @@ type NodeMap struct {
 	util.Stoppable
 	mePredicate NodePredicate
 
-	mutex       sync.Mutex
-	ready       bool
-	nodes       map[string]*NodeInfo
-	version     uint64
-	me          *NodeInfo
+	mutex   sync.Mutex
+	ready   bool
+	nodes   map[string]*NodeInfo
+	version uint64
+	me      *NodeInfo
 }
 
 func (m *NodeMap) IsVersion(version uint64) bool {
