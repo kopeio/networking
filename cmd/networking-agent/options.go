@@ -48,7 +48,7 @@ type IPSECOptions struct {
 }
 
 func (o *Options) InitDefaults() {
-	logLevel := 4
+	logLevel := 1
 	o.LogLevel = &logLevel
 
 	o.ResyncPeriod = 30 * time.Second
