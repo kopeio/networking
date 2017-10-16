@@ -1,0 +1,17 @@
+package(default_visibility = ["//visibility:public"])
+
+load(
+    "@io_bazel_rules_docker//container:container.bzl",
+    "container_image",
+)
+
+# TODO: Probably need kmod also
+container_image(
+    name = "networking-agent",
+    base = "@debian_base_amd64//image",
+    directory = "/",
+    entrypoint = "/networking-agent",
+    files = [
+        "//cmd/networking-agent",
+    ],
+)
