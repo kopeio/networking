@@ -2,7 +2,7 @@
 .PHONY: images
 
 DOCKER_REGISTRY?=kopeio
-DOCKER_TAG?=1.0.20171006
+DOCKER_TAG?=1.0.20171015
 
 all: images
 
