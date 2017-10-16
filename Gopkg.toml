@@ -1,0 +1,53 @@
+
+# Gopkg.toml example
+#
+# Refer to https://github.com/golang/dep/blob/master/docs/Gopkg.toml.md
+# for detailed Gopkg.toml documentation.
+#
+# required = ["github.com/user/thing/cmd/thing"]
+# ignored = ["github.com/user/project/pkgX", "bitbucket.org/user/project/pkgA/pkgY"]
+#
+# [[constraint]]
+#   name = "github.com/user/project"
+#   version = "1.0.0"
+#
+# [[constraint]]
+#   name = "github.com/user/project2"
+#   branch = "dev"
+#   source = "github.com/myfork/project2"
+#
+# [[override]]
+#  name = "github.com/x/y"
+#  version = "2.4.0"
+
+ignored = ["k8s.io/client-go/pkg/api/errors","k8s.io/client-go/pkg/api/v1","k8s.io/client-go/pkg/api/unversioned", "k8s.io/client-go/pkg/watch"]
+
+[[constraint]]
+  name = "github.com/ghodss/yaml"
+  version = "1.0.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/golang/glog"
+
+[[constraint]]
+  name = "github.com/spf13/pflag"
+  version = "1.0.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/vishvananda/netlink"
+
+[[override]]
+  name = "k8s.io/client-go"
+  revision = "afb4606c45bae77c4dc2c15291d4d7d6d792196c"
+
+[[override]]
+  name = "k8s.io/api"
+  revision = "81aa34336d28aadc3a8e8da7dfd9258c5157e5e4"
+
+[[override]]
+  name = "k8s.io/apimachinery"
+  revision = "3b05bbfa0a45413bfa184edbf9af617e277962fb"
+
+
