@@ -2,7 +2,7 @@
 .PHONY: images
 
 DOCKER_REGISTRY?=kopeio
-DOCKER_TAG=1.0.20170406
+DOCKER_TAG?=1.0.20171006
 
 all: images
 
@@ -14,7 +14,8 @@ push: images
 	docker push ${DOCKER_REGISTRY}/networking-agent:${DOCKER_TAG}
 
 images:
-	bazel run //images:networking-agent ${DOCKER_REGISTRY}/networking-agent:${DOCKER_TAG}
+	bazel run //images:networking-agent
+	docker tag bazel/images:networking-agent ${DOCKER_REGISTRY}/networking-agent:${DOCKER_TAG}
 
 # Targets for building inside docker
 
@@ -29,3 +30,11 @@ indockertarget:
 	bazel build --spawn_strategy=standalone --genrule_strategy=standalone  //images:networking-agent.tar
 	cp /src/bazel-bin/images/networking-agent.tar /build/
 
+rebuilddeps:
+	deps ensure
+	find vendor/ -name "BUILD" -delete
+	find vendor/ -name "BUILD.bazel" -delete
+	bazel run //:gazelle -- --proto=disable
+
+bounce:
+	kubectl delete pod -n kube-system -l name=kopeio-networking-agent
