@@ -3,12 +3,14 @@ package watchers
 import (
 	"fmt"
 	"github.com/golang/glog"
+	"k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api/v1"
-	"k8s.io/client-go/pkg/watch"
 	"kope.io/networking/pkg/routing"
 	"kope.io/networking/pkg/util"
 	"time"
+
+	"k8s.io/apimachinery/pkg/watch"
 )
 
 // NodeController watches for nodes
@@ -41,7 +43,7 @@ func (c *NodeController) Run() {
 
 func (c *NodeController) runWatcher(stopCh <-chan struct{}) {
 	runOnce := func() (bool, error) {
-		var listOpts v1.ListOptions
+		var listOpts meta_v1.ListOptions
 
 		// We need to watch all the nodes
 		//listOpts.LabelSelector = labels.Everything()
