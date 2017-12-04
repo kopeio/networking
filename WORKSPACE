@@ -35,10 +35,10 @@ container_repositories()
 container_pull(
     name = "debian_base_amd64",
     # 'tag' is also supported, but digest is encouraged for reproducibility.
-    digest = "sha256:f45c0513d335c6654ab72de6994f5899e65d87a24141e527b39ec5f503e22670",
+    digest = "sha256:594d8b94f478d5bfafbc65c8c1e56f1f0356951e3b9163f19720070df1abcaae",
     registry = "gcr.io",
     repository = "google_containers/debian-base-amd64",
-    tag = "0.2",
+    tag = "0.3",
 )
 
 ##=============================================================================
