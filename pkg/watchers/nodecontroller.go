@@ -61,6 +61,7 @@ func (c *NodeController) runWatcher(stopCh <-chan struct{}) {
 
 		listOpts.Watch = true
 		listOpts.ResourceVersion = nodeList.ResourceVersion
+		glog.Infof("doing node watch from %s", listOpts.ResourceVersion)
 		watcher, err := c.kubeClient.Core().Nodes().Watch(listOpts)
 		if err != nil {
 			return false, fmt.Errorf("error watching nodes: %v", err)
@@ -101,7 +102,7 @@ func (c *NodeController) runWatcher(stopCh <-chan struct{}) {
 		}
 
 		if err != nil {
-			glog.Warningf("Unexpected error in event watch, will retry: %v", err)
+			glog.Warningf("Unexpected error in node watch, will retry: %v", err)
 			time.Sleep(10 * time.Second)
 		}
 	}
