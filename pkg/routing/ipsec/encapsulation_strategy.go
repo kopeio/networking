@@ -1,9 +1,10 @@
 package ipsec
 
 import (
+	"net"
+
 	"github.com/vishvananda/netlink"
 	"kope.io/networking/pkg/routing"
-	"net"
 )
 
 type EncapsulationStrategy interface {

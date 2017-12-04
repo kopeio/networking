@@ -2,12 +2,13 @@ package vxlan
 
 import (
 	"fmt"
-	"github.com/golang/glog"
-	"github.com/vishvananda/netlink"
-	"github.com/vishvananda/netlink/nl"
 	"net"
 	"syscall"
 	"time"
+
+	"github.com/golang/glog"
+	"github.com/vishvananda/netlink"
+	"github.com/vishvananda/netlink/nl"
 )
 
 type NetlinkMonitor struct {

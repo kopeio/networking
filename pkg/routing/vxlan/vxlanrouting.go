@@ -2,14 +2,14 @@ package vxlan
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net"
+	"syscall"
 
 	"github.com/golang/glog"
 	"github.com/vishvananda/netlink"
-	"io/ioutil"
 	"kope.io/networking/pkg/routing"
 	"kope.io/networking/pkg/routing/netutil"
-	"syscall"
 )
 
 type VxlanRoutingProvider struct {

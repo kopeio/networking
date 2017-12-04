@@ -2,12 +2,12 @@ package layer2
 
 import (
 	"fmt"
+	"syscall"
 
 	"github.com/golang/glog"
 	"github.com/vishvananda/netlink"
 	"kope.io/networking/pkg/routing"
 	"kope.io/networking/pkg/routing/netutil"
-	"syscall"
 )
 
 type Layer2RoutingProvider struct {

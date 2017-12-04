@@ -2,12 +2,13 @@ package routing
 
 import (
 	"bytes"
-	"github.com/golang/glog"
-	"k8s.io/api/core/v1"
-	"kope.io/networking/pkg/util"
 	"net"
 	"sort"
 	"sync"
+
+	"github.com/golang/glog"
+	"k8s.io/api/core/v1"
+	"kope.io/networking/pkg/util"
 )
 
 type NodePredicate func(node *v1.Node) bool
@@ -114,7 +115,6 @@ func (m *NodeMap) updateNode(src *v1.Node) bool {
 
 	return changed
 }
-
 
 // ReplaceAllNodes takes a list of all nodes, and replaces the existing map with it
 // Nodes not in the list will be removed

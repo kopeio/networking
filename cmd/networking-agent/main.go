@@ -18,9 +18,17 @@ package main
 
 import (
 	goflag "flag"
+	"io/ioutil"
+	"net"
+	"os"
+	"os/signal"
+	"strconv"
+	"strings"
+	"syscall"
+	"time"
+
 	"github.com/golang/glog"
 	"github.com/spf13/pflag"
-	"io/ioutil"
 	"k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -29,13 +37,6 @@ import (
 	"kope.io/networking/pkg/routing/layer2"
 	"kope.io/networking/pkg/routing/vxlan"
 	"kope.io/networking/pkg/watchers"
-	"net"
-	"os"
-	"os/signal"
-	"strconv"
-	"strings"
-	"syscall"
-	"time"
 )
 
 //const (
