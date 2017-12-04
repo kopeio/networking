@@ -39,6 +39,9 @@ type Options struct {
 	IPSEC IPSECOptions `json:"ipsec"`
 
 	LogLevel *int `json:"logLevel"`
+
+	// PodCIDR is the address space allocated to pod networking
+	PodCIDR string `json:"podCIDR"`
 }
 
 type IPSECOptions struct {
@@ -55,6 +58,8 @@ func (o *Options) InitDefaults() {
 	o.TargetLinkName = "eth0"
 	o.Provider = "vxlan"
 
+	o.PodCIDR = "100.96.0.0/12"
+
 	o.SystemUUIDPath = "/sys/class/dmi/id/product_uuid"
 
 	o.IPSEC.Authentication = "sha1"
@@ -69,6 +74,8 @@ func (options *Options) AddFlags(flags *pflag.FlagSet) {
 	//healthzPort = flags.Int("healthz-port", healthPort, "port for healthz endpoint.")
 
 	//kubeConfig = flags.String("kubeconfig", "", "Path to kubeconfig file with authorization information.")
+
+	flags.StringVar(&options.PodCIDR, "pod-cidr", options.PodCIDR, "CIDR for pod address space")
 
 	flags.StringVar(&options.NodeName, "node-name", options.NodeName, "name of this node")
 

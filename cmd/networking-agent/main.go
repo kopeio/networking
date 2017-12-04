@@ -143,8 +143,7 @@ func main() {
 		glog.Fatalf("GRE temporarily not enabled - until patch goes upstream")
 	// provider, err = gre.NewGreRoutingProvider()
 	case "vxlan":
-		glog.Errorf("assuming overlay is 100.96.0.0/12")
-		_, overlayCIDR, _ := net.ParseCIDR("100.96.0.0/12")
+		_, overlayCIDR, _ := net.ParseCIDR(options.PodCIDR)
 		provider, err = vxlan.NewVxlanRoutingProvider(overlayCIDR, options.TargetLinkName)
 	case "ipsec":
 		var authenticationStrategy ipsec.AuthenticationStrategy
