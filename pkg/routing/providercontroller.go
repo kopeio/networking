@@ -35,8 +35,6 @@ func (c *Controller) Run() {
 	glog.Infof("starting node controller")
 
 	go c.runWatcher()
-
-	glog.Infof("shutting down node controller")
 }
 
 func (c *Controller) runWatcher() {
