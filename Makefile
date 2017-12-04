@@ -38,5 +38,8 @@ rebuilddeps:
 	find vendor/ -name "BUILD.bazel" -delete
 	bazel run //:gazelle -- --proto=disable
 
+gazelle:
+	bazel run //:gazelle -- --proto=disable
+
 bounce:
 	kubectl delete pod -n kube-system -l name=kopeio-networking-agent

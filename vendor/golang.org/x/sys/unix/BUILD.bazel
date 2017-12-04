@@ -77,8 +77,8 @@ go_test(
         ],
         "//conditions:default": [],
     }),
+    embed = [":go_default_library"],
     importpath = "golang.org/x/sys/unix",
-    library = ":go_default_library",
 )
 
 go_test(
