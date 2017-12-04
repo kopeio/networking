@@ -23,7 +23,7 @@ func EnsureLinkAddresses(link netlink.Link, expected []*netlink.Addr) error {
 		}
 		k := a.IPNet.String()
 		actualMap[k] = a
-		glog.Infof("Actual address entry: %v", util.AsJsonString(a))
+		glog.V(2).Infof("Actual address entry: %s=%v", k, util.AsJsonString(a))
 	}
 
 	expectedMap := make(map[string]*netlink.Addr)
@@ -35,7 +35,7 @@ func EnsureLinkAddresses(link netlink.Link, expected []*netlink.Addr) error {
 		}
 		k := e.IPNet.String()
 		expectedMap[k] = e
-		glog.Infof("Expected address entry: %v", util.AsJsonString(e))
+		glog.V(2).Infof("Expected address entry: %s=%v", k, util.AsJsonString(e))
 	}
 
 	var create []*netlink.Addr

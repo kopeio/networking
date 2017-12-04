@@ -13,6 +13,7 @@ go_library(
         "//pkg/routing/ipsec:go_default_library",
         "//pkg/routing/layer2:go_default_library",
         "//pkg/routing/vxlan:go_default_library",
+        "//pkg/routing/vxlan2:go_default_library",
         "//pkg/watchers:go_default_library",
         "//vendor/github.com/ghodss/yaml:go_default_library",
         "//vendor/github.com/golang/glog:go_default_library",
