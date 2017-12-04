@@ -49,7 +49,7 @@ func (c *NodeController) runWatcher(stopCh <-chan struct{}) {
 		//listOpts.LabelSelector = labels.Everything()
 		//listOpts.FieldSelector = fields.Everything()
 
-		nodeList, err := c.kubeClient.Core().Nodes().List(listOpts)
+		nodeList, err := c.kubeClient.CoreV1().Nodes().List(listOpts)
 		if err != nil {
 			return false, fmt.Errorf("error listing nodes: %v", err)
 		}
@@ -62,7 +62,7 @@ func (c *NodeController) runWatcher(stopCh <-chan struct{}) {
 		listOpts.Watch = true
 		listOpts.ResourceVersion = nodeList.ResourceVersion
 		glog.Infof("doing node watch from %s", listOpts.ResourceVersion)
-		watcher, err := c.kubeClient.Core().Nodes().Watch(listOpts)
+		watcher, err := c.kubeClient.CoreV1().Nodes().Watch(listOpts)
 		if err != nil {
 			return false, fmt.Errorf("error watching nodes: %v", err)
 		}
