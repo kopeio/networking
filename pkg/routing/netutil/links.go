@@ -2,11 +2,11 @@ package netutil
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/golang/glog"
 	"github.com/vishvananda/netlink"
 	"kope.io/networking/pkg/util"
-	"strings"
 )
 
 type Links struct {

@@ -2,13 +2,13 @@ package gre
 
 import (
 	"fmt"
+	"net"
+	"syscall"
 
 	"github.com/golang/glog"
 	"github.com/vishvananda/netlink"
 	"kope.io/networking/pkg/routing"
 	"kope.io/networking/pkg/routing/netutil"
-	"net"
-	"syscall"
 )
 
 const tunnelTTL = 255 // TODO: What is the correct value for a GRE tunnel?

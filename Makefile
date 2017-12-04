@@ -7,8 +7,10 @@ DOCKER_TAG?=latest
 all: images
 
 gofmt:
-	gofmt -w -s cmd/
-	gofmt -w -s pkg/
+	gofmt -w -s cmd/ pkg/
+
+goimports:
+	goimports -w cmd/ pkg/
 
 push: images
 	docker push ${DOCKER_REGISTRY}/networking-agent:${DOCKER_TAG}

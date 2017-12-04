@@ -18,11 +18,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/ghodss/yaml"
-	"github.com/spf13/pflag"
 	"io/ioutil"
 	"os"
 	"time"
+
+	"github.com/ghodss/yaml"
+	"github.com/spf13/pflag"
 )
 
 type Options struct {

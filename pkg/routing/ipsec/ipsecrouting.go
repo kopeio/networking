@@ -4,13 +4,13 @@ import (
 	"encoding/binary"
 	"fmt"
 	"net"
+	"os/exec"
 	"syscall"
 
 	"github.com/golang/glog"
 	"github.com/vishvananda/netlink"
 	"kope.io/networking/pkg/routing"
 	"kope.io/networking/pkg/routing/netutil"
-	"os/exec"
 )
 
 const (
