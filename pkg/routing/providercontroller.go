@@ -79,7 +79,7 @@ func (c *Controller) runWatcher() {
 	}
 }
 
-// Borrowed from vendor/k8s.io/kubernetes/pkg/util/node/node.go
+// Borrowed from k8s.io/kubernetes/pkg/util/node/node.go
 
 // SetNodeCondition updates specific node condition with patch operation.
 func setNodeCondition(c kubernetes.Interface, node string, condition v1.NodeCondition) error {
@@ -95,6 +95,6 @@ func setNodeCondition(c kubernetes.Interface, node string, condition v1.NodeCond
 	if err != nil {
 		return nil
 	}
-	_, err = c.Core().Nodes().PatchStatus(string(node), patch)
+	_, err = c.CoreV1().Nodes().PatchStatus(string(node), patch)
 	return err
 }
