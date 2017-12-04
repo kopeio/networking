@@ -1,19 +1,11 @@
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "ba6feabc94a5d205013e70792accb6cce989169476668fbaf98ea9b342e13b59",
-    url = "https://github.com/bazelbuild/rules_go/releases/download/0.6.0/rules_go-0.6.0.tar.gz",
+    url = "https://github.com/bazelbuild/rules_go/releases/download/0.7.1/rules_go-0.7.1.tar.gz",
+    sha256 = "341d5eacef704415386974bc82a1783a8b7ffbff2ab6ba02375e1ca20d9b031c",
 )
-
-load("@io_bazel_rules_go//go:def.bzl", "go_rules_dependencies", "go_register_toolchains", "go_repository")
-
+load("@io_bazel_rules_go//go:def.bzl", "go_rules_dependencies", "go_register_toolchains")
 go_rules_dependencies()
-
 go_register_toolchains()
-
-## enable protbuf
-#load("@io_bazel_rules_go//proto:def.bzl", "proto_register_toolchains")
-#
-#proto_register_toolchains()
 
 #=============================================================================
 # Docker rules
