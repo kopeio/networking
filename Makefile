@@ -1,8 +1,8 @@
 # TODO: Move entirely to bazel?
 .PHONY: images
 
-DOCKER_REGISTRY?=kopeio
-DOCKER_TAG?=1.0.20171015
+DOCKER_REGISTRY?=$(shell whoami)
+DOCKER_TAG?=latest
 
 all: images
 
