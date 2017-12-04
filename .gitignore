@@ -1,5 +1,6 @@
 # IntelliJ
 *.iml
+.idea/
 
 # Bazel
 bazel-bin
