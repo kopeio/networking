@@ -109,9 +109,9 @@ func (m *NetlinkMonitor) watch() {
 				continue
 			}
 
+			// TODO: Don't assume /24 PodCIDR?
 			cidrIP := net.IPv4(ip4[0], ip4[1], ip4[2], 0)
 			mac := mapToMAC(cidrIP)
-			glog.Warningf("HACK mapping assuming /24 PodCIDR, 96 as second: %s -> %s", ip4, mac)
 
 			// We inject directly for speed (i.e. we don't do a full sync)
 			glog.V(2).Infof("NETLINK: ip neigh replace %s lladdr %s dev vxlanX", ip4, mac)

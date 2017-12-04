@@ -28,7 +28,7 @@ func (t *NeighTable) Ensure(link netlink.Link, expected []*netlink.Neigh) error 
 		return fmt.Errorf("error listing layer2 config: %v", err)
 	}
 
-	glog.Warningf("TODO: using strings as layer2 key is inefficient")
+	// TODO: using strings as layer2 key is inefficient
 	actualMap := make(map[string]*netlink.Neigh)
 	for i := range actualList {
 		a := &actualList[i]
