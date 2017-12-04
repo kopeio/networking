@@ -143,7 +143,7 @@
   branch = "master"
   name = "github.com/vishvananda/netlink"
   packages = [".","nl"]
-  revision = "177f1ceba557262b3f1c3aba4df93a29199fb4eb"
+  revision = "f67b75edbf5e3bb7dfe70bb788610693a71be3d1"
 
 [[projects]]
   branch = "master"
@@ -156,6 +156,12 @@
   name = "golang.org/x/net"
   packages = ["http2","http2/hpack","idna","lex/httplex"]
   revision = "a04bdaca5b32abe1c069418fb7088ae607de5bd0"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  revision = "8b4580aae2a0dd0c231a45d3ccb8434ff533b840"
 
 [[projects]]
   branch = "master"
