@@ -14,7 +14,7 @@ go_library(
 
 go_binary(
     name = "urlshortener",
+    embed = [":go_default_library"],
     importpath = "github.com/googleapis/gnostic/plugins/gnostic-go-generator/examples/v3.0/urlshortener",
-    library = ":go_default_library",
     visibility = ["//visibility:public"],
 )
