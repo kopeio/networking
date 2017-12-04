@@ -86,6 +86,9 @@ func (c *NodeController) runWatcher(stopCh <-chan struct{}) {
 
 				case watch.Deleted:
 					c.nodeMap.RemoveNode(node)
+
+				default:
+					glog.Fatalf("unexpected type of watch event: %v", event)
 				}
 			}
 		}
