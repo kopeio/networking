@@ -67,7 +67,12 @@ func (m *NodeMap) RemoveNode(node *v1.Node) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	delete(m.nodes, node.Name)
+	m.removeNode(node.Name)
+}
+
+// removeNode removes the specified node; it assumes the lock is held
+func (m *NodeMap) removeNode(nodeName string) {
+	delete(m.nodes, nodeName)
 
 	m.version++
 }
@@ -76,6 +81,12 @@ func (m *NodeMap) UpdateNode(src *v1.Node) bool {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
+	return m.updateNode(src)
+}
+
+// updateNode updates the internal state for a particular node
+// It assumes the mutex is held
+func (m *NodeMap) updateNode(src *v1.Node) bool {
 	changed := false
 	name := src.Name
 
@@ -99,6 +110,35 @@ func (m *NodeMap) UpdateNode(src *v1.Node) bool {
 	if changed {
 		glog.V(2).Infof("Node %q changed", name)
 		m.version++
+	}
+
+	return changed
+}
+
+
+// ReplaceAllNodes takes a list of all nodes, and replaces the existing map with it
+// Nodes not in the list will be removed
+func (m *NodeMap) ReplaceAllNodes(nodes []v1.Node) bool {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	changed := false
+
+	names := make(map[string]bool)
+	for i := range nodes {
+		node := &nodes[i]
+		names[node.Name] = true
+
+		if m.updateNode(node) {
+			changed = true
+		}
+	}
+
+	for k := range m.nodes {
+		if !names[k] {
+			m.removeNode(k)
+			changed = true
+		}
 	}
 
 	return changed
