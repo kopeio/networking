@@ -53,11 +53,7 @@ func (c *NodeController) runWatcher(stopCh <-chan struct{}) {
 		if err != nil {
 			return false, fmt.Errorf("error listing nodes: %v", err)
 		}
-		for i := range nodeList.Items {
-			node := &nodeList.Items[i]
-			//glog.V(1).Infof("node list: %v", node.Name)
-			c.nodeMap.UpdateNode(node)
-		}
+		c.nodeMap.ReplaceAllNodes(nodeList.Items)
 		c.nodeMap.MarkReady()
 
 		//listOpts.LabelSelector = labels.Everything()
