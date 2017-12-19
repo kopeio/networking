@@ -36,6 +36,7 @@ import (
 	"kope.io/networking/pkg/routing/ipsec"
 	"kope.io/networking/pkg/routing/layer2"
 	"kope.io/networking/pkg/routing/vxlan"
+	"kope.io/networking/pkg/routing/vxlan2"
 	"kope.io/networking/pkg/watchers"
 )
 
@@ -143,9 +144,12 @@ func main() {
 	case "gre":
 		glog.Fatalf("GRE temporarily not enabled - until patch goes upstream")
 	// provider, err = gre.NewGreRoutingProvider()
-	case "vxlan":
+	case "vxlan-legacy":
 		_, overlayCIDR, _ := net.ParseCIDR(options.PodCIDR)
 		provider, err = vxlan.NewVxlanRoutingProvider(overlayCIDR, options.TargetLinkName)
+	case "vxlan":
+		_, overlayCIDR, _ := net.ParseCIDR(options.PodCIDR)
+		provider, err = vxlan2.NewVxlanRoutingProvider(overlayCIDR, options.TargetLinkName)
 	case "ipsec":
 		var authenticationStrategy ipsec.AuthenticationStrategy
 		var encryptionStrategy ipsec.EncryptionStrategy

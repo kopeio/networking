@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["vxlan2routing.go"],
+    importpath = "kope.io/networking/pkg/routing/vxlan2",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/routing:go_default_library",
+        "//pkg/routing/netutil:go_default_library",
+        "//vendor/github.com/golang/glog:go_default_library",
+        "//vendor/github.com/vishvananda/netlink:go_default_library",
+    ],
+)
