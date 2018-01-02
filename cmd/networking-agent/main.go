@@ -18,6 +18,7 @@ package main
 
 import (
 	goflag "flag"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
@@ -137,19 +138,27 @@ func main() {
 
 	nodeMap := routing.NewNodeMap(matcher)
 
+	targetLinkName := options.TargetLinkName
+	if targetLinkName == "" {
+		targetLinkName, err = findTargetLink()
+		if targetLinkName == "" || err != nil {
+			glog.Fatalf("unable to determine network device; pass --target to specify: %v", err)
+		}
+	}
+
 	var provider routing.Provider
 	switch options.Provider {
 	case "layer2":
-		provider, err = layer2.NewLayer2RoutingProvider(options.TargetLinkName)
+		provider, err = layer2.NewLayer2RoutingProvider(targetLinkName)
 	case "gre":
 		glog.Fatalf("GRE temporarily not enabled - until patch goes upstream")
 	// provider, err = gre.NewGreRoutingProvider()
 	case "vxlan-legacy":
 		_, overlayCIDR, _ := net.ParseCIDR(options.PodCIDR)
-		provider, err = vxlan.NewVxlanRoutingProvider(overlayCIDR, options.TargetLinkName)
+		provider, err = vxlan.NewVxlanRoutingProvider(overlayCIDR, targetLinkName)
 	case "vxlan":
 		_, overlayCIDR, _ := net.ParseCIDR(options.PodCIDR)
-		provider, err = vxlan2.NewVxlanRoutingProvider(overlayCIDR, options.TargetLinkName)
+		provider, err = vxlan2.NewVxlanRoutingProvider(overlayCIDR, targetLinkName)
 	case "ipsec":
 		var authenticationStrategy ipsec.AuthenticationStrategy
 		var encryptionStrategy ipsec.EncryptionStrategy
@@ -265,4 +274,42 @@ func handleSigterm(c *watchers.NodeController) {
 	}
 	glog.Infof("Exiting with %v", exitCode)
 	os.Exit(exitCode)
+}
+
+// findTargetLink attempts to discover the correct network interface
+func findTargetLink() (string, error) {
+	networkInterfaces, err := net.Interfaces()
+	if err != nil {
+		return "", fmt.Errorf("error querying interfaces to determine primary network interface: %v", err)
+	}
+
+	var candidates []string
+	for i := range networkInterfaces {
+		networkInterface := &networkInterfaces[i]
+		flags := networkInterface.Flags
+		name := networkInterface.Name
+
+		if (flags & net.FlagLoopback) != 0 {
+			glog.V(2).Infof("Ignoring interface %s - loopback", name)
+			continue
+		}
+
+		// Not a lot else to go on...
+		if !strings.HasPrefix(name, "eth") && !strings.HasPrefix(name, "en") {
+			glog.V(2).Infof("Ignoring interface %s - name does not look like ethernet device", name)
+			continue
+		}
+
+		candidates = append(candidates, networkInterface.Name)
+	}
+
+	if len(candidates) == 0 {
+		return "", fmt.Errorf("unable to determine interface (no interfaces found)")
+	}
+
+	if len(candidates) == 1 {
+		return candidates[0], nil
+	}
+
+	return "", fmt.Errorf("unable to determine interface (multiple interfaces found: %s)", strings.Join(candidates, ","))
 }
