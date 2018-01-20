@@ -56,7 +56,7 @@ func (o *Options) InitDefaults() {
 	o.LogLevel = &logLevel
 
 	o.ResyncPeriod = 30 * time.Second
-	o.TargetLinkName = "eth0"
+	o.TargetLinkName = ""
 	o.Provider = "vxlan"
 
 	o.PodCIDR = "100.96.0.0/12"
