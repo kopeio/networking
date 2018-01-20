@@ -103,6 +103,7 @@ func (m *NodeMap) updateNode(src *v1.Node) bool {
 
 	if m.me == nil {
 		if m.mePredicate(src) {
+			glog.Infof("identified self node: %q", src.Name)
 			m.me = node
 			changed = true
 		}

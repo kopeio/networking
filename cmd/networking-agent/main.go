@@ -90,7 +90,15 @@ func main() {
 	}
 
 	var matcher func(node *v1.Node) bool
-	if options.MachineIDPath != "" {
+	if nodeName := os.Getenv("NODE_NAME"); nodeName != "" {
+		// Passing NODE_NAME via downward API is preferred
+		glog.Infof("will match node on name=%q", nodeName)
+		matcher = func(node *v1.Node) bool {
+			return node.Name == nodeName
+		}
+	} else if options.MachineIDPath != "" {
+		glog.Warningf("using MachineIDPath is deprecated - prefer passing NODE_NAME via downward API")
+
 		b, err := ioutil.ReadFile(options.MachineIDPath)
 		if err != nil {
 			glog.Fatalf("error reading machine-id file %q: %v", options.MachineIDPath, err)
@@ -98,30 +106,46 @@ func main() {
 		machineID := string(b)
 		machineID = strings.TrimSpace(machineID)
 
+		glog.Infof("will match node on machineid=%q", machineID)
 		matcher = func(node *v1.Node) bool {
 			return node.Status.NodeInfo.MachineID == machineID
 		}
 	} else if options.SystemUUIDPath != "" {
+		glog.Warningf("using SystemUUIDPath is deprecated - prefer passing NODE_NAME via downward API")
+
 		b, err := ioutil.ReadFile(options.SystemUUIDPath)
 		if err != nil {
 			glog.Fatalf("error reading system-uuid file %q: %v", options.SystemUUIDPath, err)
 		}
 		systemUUID := string(b)
 		systemUUID = strings.TrimSpace(systemUUID)
+
+		// If the BIOS isn't correctly configured, we'll
+		if systemUUID == "03000200-0400-0500-0006-000700080009" {
+			glog.Fatalf("detected well-known invalid system-uuid 03000200-0400-0500-0006-000700080009")
+		}
+
+		glog.Infof("will match node on systemUUID=%q", systemUUID)
 		matcher = func(node *v1.Node) bool {
 			return node.Status.NodeInfo.SystemUUID == systemUUID
 		}
 	} else if options.BootIDPath != "" {
+		glog.Warningf("using BootIDPath is deprecated - prefer passing NODE_NAME via downward API")
+
 		b, err := ioutil.ReadFile(options.BootIDPath)
 		if err != nil {
 			glog.Fatalf("error reading boot-id file %q: %v", options.BootIDPath, err)
 		}
 		bootID := string(b)
 		bootID = strings.TrimSpace(bootID)
+
+		glog.Infof("will match node on bootID=%q", bootID)
 		matcher = func(node *v1.Node) bool {
 			return node.Status.NodeInfo.BootID == bootID
 		}
 	} else {
+		glog.Warningf("using NodeName is deprecated - prefer passing NODE_NAME via downward API")
+
 		matchNodeName := options.NodeName
 		if matchNodeName == "" {
 			hostname, err := os.Hostname()
@@ -131,6 +155,7 @@ func main() {
 			glog.Infof("Using hostname as node name: %q", hostname)
 			matchNodeName = hostname
 		}
+		glog.Infof("will match node on name=%q", matchNodeName)
 		matcher = func(node *v1.Node) bool {
 			return node.Name == matchNodeName
 		}

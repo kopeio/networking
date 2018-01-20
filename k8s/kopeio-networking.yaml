@@ -34,6 +34,11 @@ spec:
             - name: lib-modules
               mountPath: /lib/modules
               readOnly: true
+          env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
       serviceAccountName: kopeio-networking-agent
       tolerations:
       - key: node-role.kubernetes.io/master
