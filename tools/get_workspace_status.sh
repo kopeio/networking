@@ -41,3 +41,9 @@ else
     tree_status="Modified"
 fi
 echo "STABLE_BUILD_SCM_STATUS ${tree_status}"
+
+
+# Docker registry & docker tag
+echo "STABLE_DOCKER_TAG ${DOCKER_TAG:-latest}"
+USER=$(whoami)
+echo "STABLE_DOCKER_REGISTRY ${DOCKER_REGISTRY:-$USER}"
