@@ -9,6 +9,7 @@ go_library(
     importpath = "kope.io/networking/cmd/networking-agent",
     visibility = ["//visibility:private"],
     deps = [
+        "//:go_default_library",
         "//pkg/routing:go_default_library",
         "//pkg/routing/ipsec:go_default_library",
         "//pkg/routing/layer2:go_default_library",
@@ -29,4 +30,8 @@ go_binary(
     embed = [":go_default_library"],
     importpath = "kope.io/networking/cmd/networking-agent",
     visibility = ["//visibility:public"],
+    x_defs = {
+        "kope.io/networking.Version": "0.5",  # keep
+        "kope.io/networking.GitVersion": "{STABLE_BUILD_SCM_REVISION}",  # keep
+    },
 )
