@@ -3,6 +3,7 @@ package(default_visibility = ["//visibility:public"])
 load(
     "@io_bazel_rules_docker//container:container.bzl",
     "container_image",
+    "container_push"
 )
 
 # TODO: Probably need kmod also
@@ -14,4 +15,14 @@ container_image(
     files = [
         "//cmd/networking-agent",
     ],
+)
+
+container_push(
+    name = "push-networking-agent",
+    format = "Docker",
+    image = ":networking-agent",
+    registry = "index.docker.io",
+    repository = "{STABLE_DOCKER_REGISTRY}/networking-agent",
+    tag = "{STABLE_DOCKER_TAG}",
+    stamp = True,
 )
