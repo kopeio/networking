@@ -33,6 +33,7 @@ import (
 	"k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"kope.io/networking"
 	"kope.io/networking/pkg/routing"
 	"kope.io/networking/pkg/routing/ipsec"
 	"kope.io/networking/pkg/routing/layer2"
@@ -45,13 +46,17 @@ import (
 //	healthPort = 10249
 //)
 
-var (
-	// value overwritten during build. This can be used to resolve issues.
-	version = "0.5"
-	gitRepo = "https://github.com/kopeio/networking"
-)
-
 func main() {
+	gitVersion := networking.GitVersion
+	if gitVersion != "" {
+		if len(gitVersion) > 6 {
+			gitVersion = gitVersion[:6]
+		}
+		gitVersion = "git-" + gitVersion
+	}
+
+	fmt.Fprintf(os.Stdout, "kopeio-networking %v %v\n", networking.Version, gitVersion)
+
 	options := &Options{}
 	options.InitDefaults()
 
@@ -75,8 +80,6 @@ func main() {
 	}
 
 	flags.Parse(os.Args)
-
-	glog.Infof("Using build: %v - %v", gitRepo, version)
 
 	config, err := rest.InClusterConfig()
 	if err != nil {

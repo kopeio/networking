@@ -1,7 +1,14 @@
-load("@io_bazel_rules_go//go:def.bzl", "gazelle")
+load("@io_bazel_rules_go//go:def.bzl", "gazelle", "go_library")
 
 gazelle(
     name = "gazelle",
     external = "vendored",
     prefix = "kope.io/networking",
+)
+
+go_library(
+    name = "go_default_library",
+    srcs = ["version.go"],
+    importpath = "kope.io/networking",
+    visibility = ["//visibility:public"],
 )
