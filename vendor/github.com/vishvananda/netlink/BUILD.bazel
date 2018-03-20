@@ -197,7 +197,6 @@ go_test(
         "//conditions:default": [],
     }),
     embed = [":go_default_library"],
-    importpath = "github.com/vishvananda/netlink",
     deps = select({
         "@io_bazel_rules_go//go/platform:linux": [
             "//vendor/github.com/vishvananda/netlink/nl:go_default_library",

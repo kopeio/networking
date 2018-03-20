@@ -31,7 +31,6 @@ go_test(
         "xml_test.go",
     ],
     embed = [":go_default_library"],
-    importpath = "golang.org/x/net/webdav",
     deps = [
         "//vendor/golang.org/x/net/context:go_default_library",
         "//vendor/golang.org/x/net/webdav/internal/xml:go_default_library",

@@ -28,7 +28,6 @@ go_test(
         ],
         "//conditions:default": [],
     }),
-    importpath = "golang.org/x/sys/windows/svc/eventlog_test",
     deps = select({
         "@io_bazel_rules_go//go/platform:windows": [
             ":go_default_library",

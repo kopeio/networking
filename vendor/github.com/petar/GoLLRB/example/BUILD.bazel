@@ -11,6 +11,5 @@ go_library(
 go_binary(
     name = "example",
     embed = [":go_default_library"],
-    importpath = "github.com/petar/GoLLRB/example",
     visibility = ["//visibility:public"],
 )

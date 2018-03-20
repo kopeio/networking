@@ -14,6 +14,5 @@ go_library(
 go_binary(
     name = "protoc-gen-gostring",
     embed = [":go_default_library"],
-    importpath = "github.com/gogo/protobuf/protoc-gen-gostring",
     visibility = ["//visibility:public"],
 )

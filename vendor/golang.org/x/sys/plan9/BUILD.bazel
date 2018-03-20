@@ -43,7 +43,6 @@ go_test(
         ],
         "//conditions:default": [],
     }),
-    importpath = "golang.org/x/sys/plan9_test",
     deps = select({
         "@io_bazel_rules_go//go/platform:plan9": [
             ":go_default_library",

@@ -231,7 +231,6 @@ go_test(
         "unicast_test.go",
         "unicastsockopt_test.go",
     ],
-    importpath = "golang.org/x/net/ipv6_test",
     deps = [
         ":go_default_library",
         "//vendor/golang.org/x/net/bpf:go_default_library",

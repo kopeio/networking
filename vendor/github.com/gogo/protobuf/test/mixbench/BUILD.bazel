@@ -10,6 +10,5 @@ go_library(
 go_binary(
     name = "mixbench",
     embed = [":go_default_library"],
-    importpath = "github.com/gogo/protobuf/test/mixbench",
     visibility = ["//visibility:public"],
 )

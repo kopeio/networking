@@ -20,7 +20,6 @@ go_test(
     srcs = ["instructions_test.go"],
     data = glob(["testdata/**"]),
     embed = [":go_default_library"],
-    importpath = "golang.org/x/net/bpf",
 )
 
 go_test(
@@ -36,7 +35,6 @@ go_test(
         "vm_test.go",
     ],
     data = glob(["testdata/**"]),
-    importpath = "golang.org/x/net/bpf_test",
     deps = [
         ":go_default_library",
         "//vendor/golang.org/x/net/ipv4:go_default_library",

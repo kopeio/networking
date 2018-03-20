@@ -36,7 +36,6 @@ go_test(
     name = "go_default_test",
     srcs = ["swagger_doc_generator_test.go"],
     embed = [":go_default_library"],
-    importpath = "k8s.io/apimachinery/pkg/runtime",
 )
 
 go_test(
@@ -47,7 +46,6 @@ go_test(
         "extension_test.go",
         "scheme_test.go",
     ],
-    importpath = "k8s.io/apimachinery/pkg/runtime_test",
     deps = [
         ":go_default_library",
         "//vendor/github.com/google/gofuzz:go_default_library",

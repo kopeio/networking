@@ -28,7 +28,6 @@ go_library(
 go_binary(
     name = "networking-agent",
     embed = [":go_default_library"],
-    importpath = "kope.io/networking/cmd/networking-agent",
     visibility = ["//visibility:public"],
     x_defs = {
         "kope.io/networking.Version": "0.5",  # keep

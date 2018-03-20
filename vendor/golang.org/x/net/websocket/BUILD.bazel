@@ -21,7 +21,6 @@ go_test(
         "websocket_test.go",
     ],
     embed = [":go_default_library"],
-    importpath = "golang.org/x/net/websocket",
 )
 
 go_test(
@@ -30,6 +29,5 @@ go_test(
         "exampledial_test.go",
         "examplehandler_test.go",
     ],
-    importpath = "golang.org/x/net/websocket_test",
     deps = [":go_default_library"],
 )

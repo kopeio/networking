@@ -20,6 +20,5 @@ go_test(
     name = "go_default_test",
     srcs = ["name_test.go"],
     embed = [":go_default_library"],
-    importpath = "github.com/gogo/protobuf/protoc-gen-gogo/generator",
     deps = ["//vendor/github.com/gogo/protobuf/protoc-gen-gogo/descriptor:go_default_library"],
 )

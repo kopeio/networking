@@ -19,5 +19,4 @@ go_test(
         "proxy_test.go",
     ],
     embed = [":go_default_library"],
-    importpath = "golang.org/x/net/proxy",
 )

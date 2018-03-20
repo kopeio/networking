@@ -11,6 +11,5 @@ go_library(
 go_binary(
     name = "xkcd",
     embed = [":go_default_library"],
-    importpath = "github.com/googleapis/gnostic/plugins/gnostic-go-generator/examples/v2.0/xkcd",
     visibility = ["//visibility:public"],
 )

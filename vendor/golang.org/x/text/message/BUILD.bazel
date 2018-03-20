@@ -26,7 +26,6 @@ go_test(
         "message_test.go",
     ],
     embed = [":go_default_library"],
-    importpath = "golang.org/x/text/message",
     deps = [
         "//vendor/golang.org/x/text/internal:go_default_library",
         "//vendor/golang.org/x/text/internal/format:go_default_library",
@@ -38,7 +37,6 @@ go_test(
 go_test(
     name = "go_default_xtest",
     srcs = ["examples_test.go"],
-    importpath = "golang.org/x/text/message_test",
     deps = [
         ":go_default_library",
         "//vendor/golang.org/x/text/language:go_default_library",

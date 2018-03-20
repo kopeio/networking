@@ -11,6 +11,5 @@ go_library(
 go_binary(
     name = "summarize",
     embed = [":go_default_library"],
-    importpath = "github.com/googleapis/gnostic/plugins/gnostic-analyze/summarize",
     visibility = ["//visibility:public"],
 )

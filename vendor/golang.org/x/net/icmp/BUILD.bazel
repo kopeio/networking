@@ -76,7 +76,6 @@ go_test(
         "ipv4_test.go",
     ],
     embed = [":go_default_library"],
-    importpath = "golang.org/x/net/icmp",
     deps = [
         "//vendor/golang.org/x/net/internal/iana:go_default_library",
         "//vendor/golang.org/x/net/internal/socket:go_default_library",
@@ -92,7 +91,6 @@ go_test(
         "multipart_test.go",
         "ping_test.go",
     ],
-    importpath = "golang.org/x/net/icmp_test",
     deps = [
         ":go_default_library",
         "//vendor/golang.org/x/net/internal/iana:go_default_library",

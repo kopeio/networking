@@ -32,7 +32,6 @@ go_test(
         "//conditions:default": [],
     }),
     embed = [":go_default_library"],
-    importpath = "golang.org/x/sys/windows/registry",
 )
 
 go_test(
@@ -43,7 +42,6 @@ go_test(
         ],
         "//conditions:default": [],
     }),
-    importpath = "golang.org/x/sys/windows/registry_test",
     deps = select({
         "@io_bazel_rules_go//go/platform:windows": [
             ":go_default_library",

@@ -16,5 +16,4 @@ go_test(
     name = "go_default_test",
     srcs = ["importdedup_test.go"],
     embed = [":go_default_library"],
-    importpath = "github.com/gogo/protobuf/test/importdedup",
 )
