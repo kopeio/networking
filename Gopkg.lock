@@ -172,10 +172,9 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "master"
   name = "github.com/vishvananda/netns"
   packages = ["."]
-  revision = "86bef332bfc3b59b7624a600bd53009ce91a9829"
+  revision = "be1fbeda19366dea804f00efff2dd73a1642fdcc"
 
 [[projects]]
   branch = "master"
@@ -189,10 +188,9 @@
   revision = "a04bdaca5b32abe1c069418fb7088ae607de5bd0"
 
 [[projects]]
-  branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "8b4580aae2a0dd0c231a45d3ccb8434ff533b840"
+  revision = "d8e400bc7db4870d786864138af681469693d18c"
 
 [[projects]]
   branch = "master"
@@ -354,6 +352,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "4e94b3c5c3bcf15cd0efb01772aa398e24d3eefc5e1a27253abd7d3d71fbae8d"
+  inputs-digest = "45a38cd202d7ac0f61a2568ffb2793ed47ea9e1708d85427b3c028208283a8b9"
   solver-name = "gps-cdcl"
   solver-version = 1
