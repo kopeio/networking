@@ -63,6 +63,7 @@ go_library(
             "genetlink_linux.go",
             "gtp_linux.go",
             "handle_linux.go",
+            "ioctl_linux.go",
             "link_linux.go",
             "link_tuntap_linux.go",
             "neigh_linux.go",
@@ -126,7 +127,6 @@ go_library(
         ],
         "//conditions:default": [],
     }),
-    cgo = True,
     importpath = "github.com/vishvananda/netlink",
     visibility = ["//visibility:public"],
     deps = [
