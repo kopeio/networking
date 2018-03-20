@@ -4,7 +4,6 @@ go_library(
     name = "go_default_library",
     srcs = [
         "asm.s",
-        "env_unset.go",
     ] + select({
         "@io_bazel_rules_go//go/platform:plan9": [
             "const_plan9.go",
@@ -28,6 +27,10 @@ go_library(
         "@io_bazel_rules_go//go/platform:plan9_amd64": [
             "asm_plan9_amd64.s",
             "zsyscall_plan9_amd64.go",
+        ],
+        "@io_bazel_rules_go//go/platform:plan9_arm": [
+            "asm_plan9_arm.s",
+            "zsyscall_plan9_arm.go",
         ],
         "//conditions:default": [],
     }),
