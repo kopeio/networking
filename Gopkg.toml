@@ -35,8 +35,8 @@ ignored = ["k8s.io/client-go/pkg/api/errors","k8s.io/client-go/pkg/api/v1","k8s.
   version = "1.0.0"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/vishvananda/netlink"
+  version = "v1.0.0"
 
 [[override]]
   name = "k8s.io/client-go"
