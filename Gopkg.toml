@@ -1,25 +1,4 @@
 
-# Gopkg.toml example
-#
-# Refer to https://github.com/golang/dep/blob/master/docs/Gopkg.toml.md
-# for detailed Gopkg.toml documentation.
-#
-# required = ["github.com/user/thing/cmd/thing"]
-# ignored = ["github.com/user/project/pkgX", "bitbucket.org/user/project/pkgA/pkgY"]
-#
-# [[constraint]]
-#   name = "github.com/user/project"
-#   version = "1.0.0"
-#
-# [[constraint]]
-#   name = "github.com/user/project2"
-#   branch = "dev"
-#   source = "github.com/myfork/project2"
-#
-# [[override]]
-#  name = "github.com/x/y"
-#  version = "2.4.0"
-
 ignored = ["k8s.io/client-go/pkg/api/errors","k8s.io/client-go/pkg/api/v1","k8s.io/client-go/pkg/api/unversioned", "k8s.io/client-go/pkg/watch"]
 
 [[constraint]]
@@ -50,4 +29,10 @@ ignored = ["k8s.io/client-go/pkg/api/errors","k8s.io/client-go/pkg/api/v1","k8s.
   name = "k8s.io/apimachinery"
   revision = "3b05bbfa0a45413bfa184edbf9af617e277962fb"
 
+[[override]]
+  name = "golang.org/x/sys"
+  revision = "d8e400bc7db4870d786864138af681469693d18c"
 
+[[override]]
+  name = "github.com/vishvananda/netns"
+  revision = "be1fbeda19366dea804f00efff2dd73a1642fdcc"
