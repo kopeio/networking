@@ -11,6 +11,5 @@ go_library(
 go_binary(
     name = "schema-generator",
     embed = [":go_default_library"],
-    importpath = "github.com/googleapis/gnostic/OpenAPIv3/schema-generator",
     visibility = ["//visibility:public"],
 )

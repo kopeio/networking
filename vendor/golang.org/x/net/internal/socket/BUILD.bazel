@@ -348,7 +348,6 @@ go_test(
         ],
         "//conditions:default": [],
     }),
-    importpath = "golang.org/x/net/internal/socket_test",
     deps = select({
         "@io_bazel_rules_go//go/platform:darwin": [
             ":go_default_library",

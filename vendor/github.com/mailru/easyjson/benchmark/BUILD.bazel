@@ -17,5 +17,4 @@ go_test(
         "dummy_test.go",
     ],
     embed = [":go_default_library"],
-    importpath = "github.com/mailru/easyjson/benchmark",
 )

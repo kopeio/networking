@@ -24,7 +24,6 @@ go_test(
     name = "go_default_test",
     srcs = ["ianaindex_test.go"],
     embed = [":go_default_library"],
-    importpath = "golang.org/x/text/encoding/ianaindex",
     deps = [
         "//vendor/golang.org/x/text/encoding:go_default_library",
         "//vendor/golang.org/x/text/encoding/charmap:go_default_library",
@@ -40,7 +39,6 @@ go_test(
 go_test(
     name = "go_default_xtest",
     srcs = ["example_test.go"],
-    importpath = "golang.org/x/text/encoding/ianaindex_test",
     deps = [
         ":go_default_library",
         "//vendor/golang.org/x/text/encoding/charmap:go_default_library",

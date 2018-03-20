@@ -22,7 +22,6 @@ go_test(
         "theproto3pb_test.go",
     ],
     embed = [":go_default_library"],
-    importpath = "github.com/gogo/protobuf/test/theproto3/combos/neither",
     deps = [
         "//vendor/github.com/gogo/protobuf/gogoproto:go_default_library",
         "//vendor/github.com/gogo/protobuf/jsonpb:go_default_library",

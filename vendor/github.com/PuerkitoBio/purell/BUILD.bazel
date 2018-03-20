@@ -22,5 +22,4 @@ go_test(
         "urlnorm_test.go",
     ],
     embed = [":go_default_library"],
-    importpath = "github.com/PuerkitoBio/purell",
 )

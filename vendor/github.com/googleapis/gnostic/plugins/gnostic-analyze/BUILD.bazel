@@ -15,6 +15,5 @@ go_library(
 go_binary(
     name = "gnostic-analyze",
     embed = [":go_default_library"],
-    importpath = "github.com/googleapis/gnostic/plugins/gnostic-analyze",
     visibility = ["//visibility:public"],
 )

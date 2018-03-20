@@ -34,5 +34,4 @@ go_test(
         "//conditions:default": [],
     }),
     embed = [":go_default_library"],
-    importpath = "golang.org/x/net/lif",
 )

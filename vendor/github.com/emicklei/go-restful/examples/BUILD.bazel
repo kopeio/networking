@@ -35,7 +35,6 @@ go_library(
 go_binary(
     name = "examples",
     embed = [":go_default_library"],
-    importpath = "github.com/emicklei/go-restful/examples",
     visibility = ["//visibility:public"],
 )
 
@@ -46,6 +45,5 @@ go_test(
         "restful-routefunction_test.go",
     ],
     embed = [":go_default_library"],
-    importpath = "github.com/emicklei/go-restful/examples",
     deps = ["//vendor/github.com/emicklei/go-restful:go_default_library"],
 )

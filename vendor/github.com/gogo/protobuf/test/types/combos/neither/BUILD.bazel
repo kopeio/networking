@@ -19,7 +19,6 @@ go_test(
         "typespb_test.go",
     ],
     embed = [":go_default_library"],
-    importpath = "github.com/gogo/protobuf/test/types/combos/neither",
     deps = [
         "//vendor/github.com/gogo/protobuf/gogoproto:go_default_library",
         "//vendor/github.com/gogo/protobuf/jsonpb:go_default_library",

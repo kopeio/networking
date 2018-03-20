@@ -21,11 +21,9 @@ go_test(
         "xml_test.go",
     ],
     embed = [":go_default_library"],
-    importpath = "golang.org/x/net/webdav/internal/xml",
 )
 
 go_test(
     name = "go_default_xtest",
     srcs = ["example_test.go"],
-    importpath = "golang.org/x/net/webdav/internal/xml_test",
 )

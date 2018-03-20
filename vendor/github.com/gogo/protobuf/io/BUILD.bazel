@@ -19,7 +19,6 @@ go_test(
         "io_test.go",
         "uint32_test.go",
     ],
-    importpath = "github.com/gogo/protobuf/io_test",
     deps = [
         ":go_default_library",
         "//vendor/github.com/gogo/protobuf/test:go_default_library",

@@ -230,7 +230,6 @@ go_test(
     name = "go_default_test",
     srcs = ["header_test.go"],
     embed = [":go_default_library"],
-    importpath = "golang.org/x/net/ipv4",
     deps = ["//vendor/golang.org/x/net/internal/socket:go_default_library"],
 )
 
@@ -250,7 +249,6 @@ go_test(
         "unicast_test.go",
         "unicastsockopt_test.go",
     ],
-    importpath = "golang.org/x/net/ipv4_test",
     deps = [
         ":go_default_library",
         "//vendor/golang.org/x/net/bpf:go_default_library",

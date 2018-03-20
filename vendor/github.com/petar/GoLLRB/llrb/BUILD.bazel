@@ -20,5 +20,4 @@ go_test(
         "llrb_test.go",
     ],
     embed = [":go_default_library"],
-    importpath = "github.com/petar/GoLLRB/llrb",
 )
