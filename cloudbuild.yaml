@@ -1,0 +1,6 @@
+steps:
+- name: 'gcr.io/cloud-builders/bazel'
+  args: ['build', '//images:networking-agent.tar']    
+  env:
+  - 'BUILD_SCM_REVISION=$COMMIT_SHA'
+  - 'BUILD_SCM_STATUS=Clean'
