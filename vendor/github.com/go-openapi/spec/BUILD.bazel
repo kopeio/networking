@@ -25,6 +25,7 @@ go_library(
         "tag.go",
         "xml_object.go",
     ],
+    importmap = "kope.io/networking/vendor/github.com/go-openapi/spec",
     importpath = "github.com/go-openapi/spec",
     visibility = ["//visibility:public"],
     deps = [
@@ -60,7 +61,7 @@ go_test(
     deps = [
         "//vendor/github.com/go-openapi/jsonpointer:go_default_library",
         "//vendor/github.com/go-openapi/swag:go_default_library",
-        "//vendor/github.com/stretchr/testify/assert:go_default_library",
         "//vendor/gopkg.in/yaml.v2:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
     ],
 )

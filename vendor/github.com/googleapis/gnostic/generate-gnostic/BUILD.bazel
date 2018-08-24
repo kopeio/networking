@@ -11,6 +11,7 @@ go_library(
         "main.go",
         "types.go",
     ],
+    importmap = "kope.io/networking/vendor/github.com/googleapis/gnostic/generate-gnostic",
     importpath = "github.com/googleapis/gnostic/generate-gnostic",
     visibility = ["//visibility:private"],
     deps = [

@@ -8,6 +8,7 @@ go_library(
         "search.go",
         "tables.go",
     ],
+    importmap = "kope.io/networking/vendor/golang.org/x/text/search",
     importpath = "golang.org/x/text/search",
     visibility = ["//visibility:public"],
     deps = [

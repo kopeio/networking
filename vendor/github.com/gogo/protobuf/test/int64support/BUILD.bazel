@@ -6,6 +6,7 @@ go_library(
         "object.pb.go",
         "object_js.go",
     ],
+    importmap = "kope.io/networking/vendor/github.com/gogo/protobuf/test/int64support",
     importpath = "github.com/gogo/protobuf/test/int64support",
     visibility = ["//visibility:public"],
     deps = [

@@ -19,6 +19,7 @@ go_library(
         "gotemplate_Uint8.go",
         "opts.go",
     ],
+    importmap = "kope.io/networking/vendor/github.com/mailru/easyjson/opt",
     importpath = "github.com/mailru/easyjson/opt",
     visibility = ["//visibility:public"],
     deps = [

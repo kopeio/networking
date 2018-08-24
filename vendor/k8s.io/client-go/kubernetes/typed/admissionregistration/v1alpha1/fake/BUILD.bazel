@@ -8,6 +8,7 @@ go_library(
         "fake_externaladmissionhookconfiguration.go",
         "fake_initializerconfiguration.go",
     ],
+    importmap = "kope.io/networking/vendor/k8s.io/client-go/kubernetes/typed/admissionregistration/v1alpha1/fake",
     importpath = "k8s.io/client-go/kubernetes/typed/admissionregistration/v1alpha1/fake",
     visibility = ["//visibility:public"],
     deps = [

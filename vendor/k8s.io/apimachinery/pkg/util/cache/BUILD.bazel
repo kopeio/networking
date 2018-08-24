@@ -6,9 +6,10 @@ go_library(
         "cache.go",
         "lruexpirecache.go",
     ],
+    importmap = "kope.io/networking/vendor/k8s.io/apimachinery/pkg/util/cache",
     importpath = "k8s.io/apimachinery/pkg/util/cache",
     visibility = ["//visibility:public"],
-    deps = ["//vendor/github.com/hashicorp/golang-lru:go_default_library"],
+    deps = ["@com_github_hashicorp_golang_lru//:go_default_library"],
 )
 
 go_test(
@@ -19,7 +20,7 @@ go_test(
     ],
     embed = [":go_default_library"],
     deps = [
-        "//vendor/github.com/golang/groupcache/lru:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/util/clock:go_default_library",
+        "@com_github_golang_groupcache//lru:go_default_library",
     ],
 )
