@@ -25,20 +25,26 @@
 # and the output will be discarded.
 
 # The code below presents an implementation that works for git repository
-git_rev=$(git rev-parse HEAD)
-if [[ $? != 0 ]];
-then
+git_rev=${BUILD_SCM_REVISION}
+if [[ -z "${git_rev}" ]]; then
+  git_rev=$(git rev-parse HEAD)
+  if [[ $? != 0 ]];
+  then
     exit 1
+  fi
 fi
 echo "STABLE_BUILD_SCM_REVISION ${git_rev}"
 
 # Check whether there are any uncommited changes
-git diff-index --quiet HEAD --
-if [[ $? == 0 ]];
-then
+tree_status=${BUILD_SCM_STATUS}
+if [[ -z "${tree_status}" ]]; then
+  git diff-index --quiet HEAD --
+  if [[ $? == 0 ]];
+  then
     tree_status="Clean"
-else
+  else
     tree_status="Modified"
+  fi
 fi
 echo "STABLE_BUILD_SCM_STATUS ${tree_status}"
 
