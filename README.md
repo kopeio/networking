@@ -57,10 +57,10 @@ Daemonsets are included!
 
 Simply create the appropriate daemonset:
 
-* `layer2`: `kubectl create -f https://raw.githubusercontent.com/kopeio/networking/master/k8s/layer2.yaml`
-* `vxlan`: `kubectl create -f https://raw.githubusercontent.com/kopeio/networking/master/k8s/vxlan.yaml`
-* `ipsec-plaintext`: `kubectl create -f https://raw.githubusercontent.com/kopeio/networking/master/k8s/ipsec-plaintext.yaml`
-* `ipsec-encrypted` (not yet secure!): `kubectl create -f https://raw.githubusercontent.com/kopeio/networking/master/k8s/ipsec-encrypted.yaml`
+* `layer2`: `kubectl create -f https://raw.githubusercontent.com/kopeio/networking/master/k8s/old/layer2.yaml`
+* `vxlan`: `kubectl create -f https://raw.githubusercontent.com/kopeio/networking/master/k8s/old/vxlan.yaml`
+* `ipsec-plaintext`: `kubectl create -f https://raw.githubusercontent.com/kopeio/networking/master/k8s/old/ipsec-plaintext.yaml`
+* `ipsec-encrypted` (not yet secure!): `kubectl create -f https://raw.githubusercontent.com/kopeio/networking/master/k8s/old/ipsec-encrypted.yaml`
 
 
 You can of course clone this repository and work from the filesystem instead.
