@@ -4,7 +4,9 @@
 DOCKER_REGISTRY?=$(shell whoami)
 DOCKER_TAG?=latest
 
-all: images
+all:
+	bazel build //...
+	bazel test //...
 
 gofmt:
 	gofmt -w -s cmd/ pkg/
@@ -12,28 +14,11 @@ gofmt:
 goimports:
 	goimports -w cmd/ pkg/
 
-push: images
-	docker push ${DOCKER_REGISTRY}/networking-agent:${DOCKER_TAG}
-
-images:
-	bazel run //images:networking-agent
-	docker tag bazel/images:networking-agent ${DOCKER_REGISTRY}/networking-agent:${DOCKER_TAG}
-
-# Targets for building inside docker
-
-buildindocker: bazelbuild
-	mkdir -p build/
-	docker run -v `pwd`:/src -v ~/.cache/bazeldocker/:/root/.cache -v `pwd`/build:/build bazelbuild make indockertarget
-
-bazelbuild:
-	cd images/bazelbuild; docker build -t bazelbuild .
-
-indockertarget:
-	bazel build --spawn_strategy=standalone --genrule_strategy=standalone  //images:networking-agent.tar
-	cp /src/bazel-bin/images/networking-agent.tar /build/
+push:
+	bazel run //images:push-networking-agent
 
 rebuilddeps:
-	dep ensure
+	go mod vendor
 	find vendor/ -name "BUILD" -delete
 	find vendor/ -name "BUILD.bazel" -delete
 	bazel run //:gazelle -- --proto=disable
