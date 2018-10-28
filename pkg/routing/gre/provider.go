@@ -92,7 +92,7 @@ func (p *GreRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 
 		// ip tunnel add $name mode gre remote $remoteIP local $localIP`
 		{
-			t := &netlink.Gre{
+			t := &netlink.Gretun{
 				LinkAttrs: netlink.LinkAttrs{
 					Name: tunnelName,
 				},
