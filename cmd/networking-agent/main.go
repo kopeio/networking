@@ -35,6 +35,7 @@ import (
 	"k8s.io/client-go/rest"
 	"kope.io/networking"
 	"kope.io/networking/pkg/routing"
+	"kope.io/networking/pkg/routing/gre"
 	"kope.io/networking/pkg/routing/ipsec"
 	"kope.io/networking/pkg/routing/layer2"
 	"kope.io/networking/pkg/routing/vxlan"
@@ -179,8 +180,7 @@ func main() {
 	case "layer2":
 		provider, err = layer2.NewLayer2RoutingProvider(targetLinkName)
 	case "gre":
-		glog.Fatalf("GRE temporarily not enabled - until patch goes upstream")
-	// provider, err = gre.NewGreRoutingProvider()
+		provider, err = gre.NewGreRoutingProvider()
 	case "vxlan-legacy":
 		_, overlayCIDR, _ := net.ParseCIDR(options.PodCIDR)
 		provider, err = vxlan.NewVxlanRoutingProvider(overlayCIDR, targetLinkName)

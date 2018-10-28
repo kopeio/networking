@@ -11,6 +11,7 @@ go_library(
     deps = [
         "//:go_default_library",
         "//pkg/routing:go_default_library",
+        "//pkg/routing/gre:go_default_library",
         "//pkg/routing/ipsec:go_default_library",
         "//pkg/routing/layer2:go_default_library",
         "//pkg/routing/vxlan:go_default_library",
