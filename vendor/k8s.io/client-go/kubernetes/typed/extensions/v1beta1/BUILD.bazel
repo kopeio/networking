@@ -14,7 +14,6 @@ go_library(
         "replicaset.go",
         "scale.go",
         "scale_expansion.go",
-        "thirdpartyresource.go",
     ],
     importmap = "kope.io/networking/vendor/k8s.io/client-go/kubernetes/typed/extensions/v1beta1",
     importpath = "k8s.io/client-go/kubernetes/typed/extensions/v1beta1",
