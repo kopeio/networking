@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
 
 go_library(
     name = "go_default_library",
@@ -33,4 +33,10 @@ go_binary(
         "kope.io/networking.Version": "0.5",  # keep
         "kope.io/networking.GitVersion": "{STABLE_BUILD_SCM_REVISION}",  # keep
     },
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["options_test.go"],
+    embed = [":go_default_library"],
 )
