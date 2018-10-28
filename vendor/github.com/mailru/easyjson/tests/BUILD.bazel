@@ -11,6 +11,7 @@ go_library(
         "omitempty.go",
         "snake.go",
     ],
+    importmap = "kope.io/networking/vendor/github.com/mailru/easyjson/tests",
     importpath = "github.com/mailru/easyjson/tests",
     visibility = ["//visibility:public"],
     deps = [

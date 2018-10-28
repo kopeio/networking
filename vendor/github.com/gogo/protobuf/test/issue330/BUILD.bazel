@@ -6,6 +6,7 @@ go_library(
         "issue330.pb.go",
         "type.go",
     ],
+    importmap = "kope.io/networking/vendor/github.com/gogo/protobuf/test/issue330",
     importpath = "github.com/gogo/protobuf/test/issue330",
     visibility = ["//visibility:public"],
     deps = [

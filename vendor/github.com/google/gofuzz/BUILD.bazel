@@ -6,18 +6,16 @@ go_library(
         "doc.go",
         "fuzz.go",
     ],
+    importmap = "kope.io/networking/vendor/github.com/google/gofuzz",
     importpath = "github.com/google/gofuzz",
     visibility = ["//visibility:public"],
 )
 
 go_test(
     name = "go_default_test",
-    srcs = ["fuzz_test.go"],
+    srcs = [
+        "example_test.go",
+        "fuzz_test.go",
+    ],
     embed = [":go_default_library"],
-)
-
-go_test(
-    name = "go_default_xtest",
-    srcs = ["example_test.go"],
-    deps = [":go_default_library"],
 )

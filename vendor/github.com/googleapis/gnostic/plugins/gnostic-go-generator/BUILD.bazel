@@ -14,6 +14,7 @@ go_library(
         "render_types.go",
         "renderer.go",
     ],
+    importmap = "kope.io/networking/vendor/github.com/googleapis/gnostic/plugins/gnostic-go-generator",
     importpath = "github.com/googleapis/gnostic/plugins/gnostic-go-generator",
     visibility = ["//visibility:private"],
     deps = [

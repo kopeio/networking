@@ -16,6 +16,7 @@ go_library(
         "tables.go",
         "tags.go",
     ],
+    importmap = "kope.io/networking/vendor/golang.org/x/text/language",
     importpath = "golang.org/x/text/language",
     visibility = ["//visibility:public"],
     deps = ["//vendor/golang.org/x/text/internal/tag:go_default_library"],
@@ -25,6 +26,8 @@ go_test(
     name = "go_default_test",
     srcs = [
         "coverage_test.go",
+        "examples_test.go",
+        "httpexample_test.go",
         "language_test.go",
         "lookup_test.go",
         "match_test.go",

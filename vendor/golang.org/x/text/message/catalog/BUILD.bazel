@@ -6,6 +6,7 @@ go_library(
         "catalog.go",
         "dict.go",
     ],
+    importmap = "kope.io/networking/vendor/golang.org/x/text/message/catalog",
     importpath = "golang.org/x/text/message/catalog",
     visibility = ["//visibility:public"],
     deps = [

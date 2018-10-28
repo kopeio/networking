@@ -7,7 +7,7 @@ go_test(
         "main_test.go",
     ],
     deps = [
-        "//vendor/github.com/gogo/protobuf/protoc-gen-gogo/testdata/multi:go_default_library",
         "//vendor/github.com/gogo/protobuf/protoc-gen-gogo/testdata/my_test:go_default_library",
+        "@com_github_gogo_protobuf//protoc-gen-gogo/testdata/multi:go_default_library",
     ],
 )

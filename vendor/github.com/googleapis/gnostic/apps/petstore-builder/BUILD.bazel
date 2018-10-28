@@ -7,6 +7,7 @@ go_library(
         "petstore-v2.go",
         "petstore-v3.go",
     ],
+    importmap = "kope.io/networking/vendor/github.com/googleapis/gnostic/apps/petstore-builder",
     importpath = "github.com/googleapis/gnostic/apps/petstore-builder",
     visibility = ["//visibility:private"],
     deps = [

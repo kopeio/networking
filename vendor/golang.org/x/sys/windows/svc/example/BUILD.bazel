@@ -2,16 +2,14 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
     name = "go_default_library",
-    srcs = select({
-        "@io_bazel_rules_go//go/platform:windows": [
-            "beep.go",
-            "install.go",
-            "main.go",
-            "manage.go",
-            "service.go",
-        ],
-        "//conditions:default": [],
-    }),
+    srcs = [
+        "beep.go",
+        "install.go",
+        "main.go",
+        "manage.go",
+        "service.go",
+    ],
+    importmap = "kope.io/networking/vendor/golang.org/x/sys/windows/svc/example",
     importpath = "golang.org/x/sys/windows/svc/example",
     visibility = ["//visibility:private"],
     deps = select({

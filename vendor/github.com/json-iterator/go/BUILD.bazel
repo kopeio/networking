@@ -42,6 +42,7 @@ go_library(
         "feature_stream_string.go",
         "jsoniter.go",
     ],
+    importmap = "kope.io/networking/vendor/github.com/json-iterator/go",
     importpath = "github.com/json-iterator/go",
     visibility = ["//visibility:public"],
 )
@@ -95,6 +96,6 @@ go_test(
     embed = [":go_default_library"],
     deps = [
         "//vendor/github.com/google/gofuzz:go_default_library",
-        "//vendor/github.com/stretchr/testify/require:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
     ],
 )

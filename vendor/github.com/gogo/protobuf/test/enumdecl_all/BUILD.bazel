@@ -6,6 +6,7 @@ go_library(
         "enumdeclall.pb.go",
         "models.go",
     ],
+    importmap = "kope.io/networking/vendor/github.com/gogo/protobuf/test/enumdecl_all",
     importpath = "github.com/gogo/protobuf/test/enumdecl_all",
     visibility = ["//visibility:public"],
     deps = [

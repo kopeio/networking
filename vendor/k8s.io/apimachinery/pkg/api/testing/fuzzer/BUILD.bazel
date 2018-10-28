@@ -6,6 +6,7 @@ go_library(
         "fuzzer.go",
         "valuefuzz.go",
     ],
+    importmap = "kope.io/networking/vendor/k8s.io/apimachinery/pkg/api/testing/fuzzer",
     importpath = "k8s.io/apimachinery/pkg/api/testing/fuzzer",
     visibility = ["//visibility:public"],
     deps = [

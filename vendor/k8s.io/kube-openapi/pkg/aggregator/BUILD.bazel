@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "go_default_library",
     srcs = ["aggregator.go"],
+    importmap = "kope.io/networking/vendor/k8s.io/kube-openapi/pkg/aggregator",
     importpath = "k8s.io/kube-openapi/pkg/aggregator",
     visibility = ["//visibility:public"],
     deps = [
@@ -18,6 +19,6 @@ go_test(
     deps = [
         "//vendor/github.com/ghodss/yaml:go_default_library",
         "//vendor/github.com/go-openapi/spec:go_default_library",
-        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
     ],
 )

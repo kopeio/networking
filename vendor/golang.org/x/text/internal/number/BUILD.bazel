@@ -11,6 +11,7 @@ go_library(
         "roundingmode_string.go",
         "tables.go",
     ],
+    importmap = "kope.io/networking/vendor/golang.org/x/text/internal/number",
     importpath = "golang.org/x/text/internal/number",
     visibility = ["//vendor/golang.org/x/text:__subpackages__"],
     deps = [

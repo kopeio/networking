@@ -10,6 +10,7 @@ go_library(
         "surface.pb.go",
         "type.go",
     ],
+    importmap = "kope.io/networking/vendor/github.com/googleapis/gnostic/surface",
     importpath = "github.com/googleapis/gnostic/surface",
     visibility = ["//visibility:public"],
     deps = [

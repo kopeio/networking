@@ -6,6 +6,7 @@ go_library(
         "ianaindex.go",
         "tables.go",
     ],
+    importmap = "kope.io/networking/vendor/golang.org/x/text/encoding/ianaindex",
     importpath = "golang.org/x/text/encoding/ianaindex",
     visibility = ["//visibility:public"],
     deps = [
@@ -22,7 +23,10 @@ go_library(
 
 go_test(
     name = "go_default_test",
-    srcs = ["ianaindex_test.go"],
+    srcs = [
+        "example_test.go",
+        "ianaindex_test.go",
+    ],
     embed = [":go_default_library"],
     deps = [
         "//vendor/golang.org/x/text/encoding:go_default_library",
@@ -33,14 +37,5 @@ go_test(
         "//vendor/golang.org/x/text/encoding/simplifiedchinese:go_default_library",
         "//vendor/golang.org/x/text/encoding/traditionalchinese:go_default_library",
         "//vendor/golang.org/x/text/encoding/unicode:go_default_library",
-    ],
-)
-
-go_test(
-    name = "go_default_xtest",
-    srcs = ["example_test.go"],
-    deps = [
-        ":go_default_library",
-        "//vendor/golang.org/x/text/encoding/charmap:go_default_library",
     ],
 )

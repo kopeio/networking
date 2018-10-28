@@ -7,6 +7,7 @@ go_library(
         "types.go",
         "zz_generated.deepcopy.go",
     ],
+    importmap = "kope.io/networking/vendor/k8s.io/apimachinery/pkg/runtime/serializer/testing",
     importpath = "k8s.io/apimachinery/pkg/runtime/serializer/testing",
     visibility = ["//visibility:public"],
     deps = [
