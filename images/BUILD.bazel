@@ -9,7 +9,7 @@ load(
 # TODO: Probably need kmod also
 container_image(
     name = "networking-agent",
-    base = "@debian_base_amd64//image",
+    base = "@debian-base-amd64//image",
     directory = "/",
     entrypoint = "/networking-agent",
     files = [
