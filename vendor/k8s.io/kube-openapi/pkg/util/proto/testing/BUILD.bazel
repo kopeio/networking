@@ -6,6 +6,7 @@ go_library(
         "gvk.go",
         "openapi.go",
     ],
+    importmap = "kope.io/networking/vendor/k8s.io/kube-openapi/pkg/util/proto/testing",
     importpath = "k8s.io/kube-openapi/pkg/util/proto/testing",
     visibility = ["//visibility:public"],
     deps = [

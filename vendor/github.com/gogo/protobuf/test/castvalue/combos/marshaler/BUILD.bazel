@@ -6,6 +6,7 @@ go_library(
         "castvalue.pb.go",
         "mytypes.go",
     ],
+    importmap = "kope.io/networking/vendor/github.com/gogo/protobuf/test/castvalue/combos/marshaler",
     importpath = "github.com/gogo/protobuf/test/castvalue/combos/marshaler",
     visibility = ["//visibility:public"],
     deps = [

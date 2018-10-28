@@ -6,6 +6,7 @@ go_library(
         "environment.go",
         "plugin.pb.go",
     ],
+    importmap = "kope.io/networking/vendor/github.com/googleapis/gnostic/plugins",
     importpath = "github.com/googleapis/gnostic/plugins",
     visibility = ["//visibility:public"],
     deps = [

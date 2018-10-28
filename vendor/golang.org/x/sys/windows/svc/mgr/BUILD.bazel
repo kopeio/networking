@@ -2,14 +2,12 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "go_default_library",
-    srcs = select({
-        "@io_bazel_rules_go//go/platform:windows": [
-            "config.go",
-            "mgr.go",
-            "service.go",
-        ],
-        "//conditions:default": [],
-    }),
+    srcs = [
+        "config.go",
+        "mgr.go",
+        "service.go",
+    ],
+    importmap = "kope.io/networking/vendor/golang.org/x/sys/windows/svc/mgr",
     importpath = "golang.org/x/sys/windows/svc/mgr",
     visibility = ["//visibility:public"],
     deps = select({
@@ -22,17 +20,7 @@ go_library(
 )
 
 go_test(
-    name = "go_default_xtest",
-    srcs = select({
-        "@io_bazel_rules_go//go/platform:windows": [
-            "mgr_test.go",
-        ],
-        "//conditions:default": [],
-    }),
-    deps = select({
-        "@io_bazel_rules_go//go/platform:windows": [
-            ":go_default_library",
-        ],
-        "//conditions:default": [],
-    }),
+    name = "go_default_test",
+    srcs = ["mgr_test.go"],
+    embed = [":go_default_library"],
 )

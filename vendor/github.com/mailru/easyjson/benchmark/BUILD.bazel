@@ -6,6 +6,7 @@ go_library(
         "data.go",
         "data_var.go",
     ],
+    importmap = "kope.io/networking/vendor/github.com/mailru/easyjson/benchmark",
     importpath = "github.com/mailru/easyjson/benchmark",
     visibility = ["//visibility:public"],
 )

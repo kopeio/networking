@@ -11,6 +11,7 @@ go_library(
         "format.go",
         "spew.go",
     ],
+    importmap = "kope.io/networking/vendor/github.com/davecgh/go-spew/spew",
     importpath = "github.com/davecgh/go-spew/spew",
     visibility = ["//visibility:public"],
 )
@@ -18,8 +19,14 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = [
+        "common_test.go",
+        "dump_test.go",
+        "dumpnocgo_test.go",
+        "example_test.go",
+        "format_test.go",
         "internal_test.go",
         "internalunsafe_test.go",
+        "spew_test.go",
     ],
     data = glob(["testdata/**"]),
     embed = [":go_default_library"],

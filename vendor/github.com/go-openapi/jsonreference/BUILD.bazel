@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "go_default_library",
     srcs = ["reference.go"],
+    importmap = "kope.io/networking/vendor/github.com/go-openapi/jsonreference",
     importpath = "github.com/go-openapi/jsonreference",
     visibility = ["//visibility:public"],
     deps = [
@@ -17,6 +18,6 @@ go_test(
     embed = [":go_default_library"],
     deps = [
         "//vendor/github.com/go-openapi/jsonpointer:go_default_library",
-        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
     ],
 )

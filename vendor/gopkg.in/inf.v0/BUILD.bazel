@@ -6,6 +6,7 @@ go_library(
         "dec.go",
         "rounder.go",
     ],
+    importmap = "kope.io/networking/vendor/gopkg.in/inf.v0",
     importpath = "gopkg.in/inf.v0",
     visibility = ["//visibility:public"],
 )
@@ -16,17 +17,10 @@ go_test(
         "benchmark_test.go",
         "dec_go1_2_test.go",
         "dec_internal_test.go",
-    ],
-    embed = [":go_default_library"],
-)
-
-go_test(
-    name = "go_default_xtest",
-    srcs = [
         "dec_test.go",
         "example_test.go",
         "rounder_example_test.go",
         "rounder_test.go",
     ],
-    deps = [":go_default_library"],
+    embed = [":go_default_library"],
 )

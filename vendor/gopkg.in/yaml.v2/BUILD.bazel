@@ -17,20 +17,19 @@ go_library(
         "yamlh.go",
         "yamlprivateh.go",
     ],
+    importmap = "kope.io/networking/vendor/gopkg.in/yaml.v2",
     importpath = "gopkg.in/yaml.v2",
     visibility = ["//visibility:public"],
 )
 
 go_test(
-    name = "go_default_xtest",
+    name = "go_default_test",
     srcs = [
         "decode_test.go",
         "encode_test.go",
         "example_embedded_test.go",
         "suite_test.go",
     ],
-    deps = [
-        ":go_default_library",
-        "//vendor/gopkg.in/check.v1:go_default_library",
-    ],
+    embed = [":go_default_library"],
+    deps = ["@in_gopkg_check_v1//:go_default_library"],
 )

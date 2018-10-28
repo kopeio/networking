@@ -7,6 +7,7 @@ go_library(
         "thetest.pb.go",
         "uuid.go",
     ],
+    importmap = "kope.io/networking/vendor/github.com/gogo/protobuf/test/combos/both",
     importpath = "github.com/gogo/protobuf/test/combos/both",
     visibility = ["//visibility:public"],
     deps = [

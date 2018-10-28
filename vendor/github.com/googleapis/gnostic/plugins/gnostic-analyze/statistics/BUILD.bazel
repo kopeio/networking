@@ -6,6 +6,7 @@ go_library(
         "statsv2.go",
         "statsv3.go",
     ],
+    importmap = "kope.io/networking/vendor/github.com/googleapis/gnostic/plugins/gnostic-analyze/statistics",
     importpath = "github.com/googleapis/gnostic/plugins/gnostic-analyze/statistics",
     visibility = ["//visibility:public"],
     deps = [

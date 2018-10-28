@@ -21,6 +21,7 @@ go_library(
         "types_proto.go",
         "zz_generated.deepcopy.go",
     ],
+    importmap = "kope.io/networking/vendor/k8s.io/apimachinery/pkg/runtime",
     importpath = "k8s.io/apimachinery/pkg/runtime",
     visibility = ["//visibility:public"],
     deps = [
@@ -34,20 +35,15 @@ go_library(
 
 go_test(
     name = "go_default_test",
-    srcs = ["swagger_doc_generator_test.go"],
-    embed = [":go_default_library"],
-)
-
-go_test(
-    name = "go_default_xtest",
     srcs = [
         "conversion_test.go",
         "embedded_test.go",
         "extension_test.go",
         "scheme_test.go",
+        "swagger_doc_generator_test.go",
     ],
+    embed = [":go_default_library"],
     deps = [
-        ":go_default_library",
         "//vendor/github.com/google/gofuzz:go_default_library",
         "//vendor/github.com/spf13/pflag:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/api/meta:go_default_library",

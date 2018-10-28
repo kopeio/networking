@@ -11,6 +11,7 @@ go_library(
         "scale_int.go",
         "suffix.go",
     ],
+    importmap = "kope.io/networking/vendor/k8s.io/apimachinery/pkg/api/resource",
     importpath = "k8s.io/apimachinery/pkg/api/resource",
     visibility = ["//visibility:public"],
     deps = [
@@ -27,6 +28,7 @@ go_test(
     srcs = [
         "amount_test.go",
         "math_test.go",
+        "quantity_example_test.go",
         "quantity_proto_test.go",
         "quantity_test.go",
         "scale_int_test.go",
@@ -37,10 +39,4 @@ go_test(
         "//vendor/github.com/spf13/pflag:go_default_library",
         "//vendor/gopkg.in/inf.v0:go_default_library",
     ],
-)
-
-go_test(
-    name = "go_default_xtest",
-    srcs = ["quantity_example_test.go"],
-    deps = [":go_default_library"],
 )

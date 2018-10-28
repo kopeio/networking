@@ -6,6 +6,7 @@ go_library(
         "asym.pb.go",
         "pop.go",
     ],
+    importmap = "kope.io/networking/vendor/github.com/gogo/protobuf/test/asymetric-issue125",
     importpath = "github.com/gogo/protobuf/test/asymetric-issue125",
     visibility = ["//visibility:public"],
     deps = [

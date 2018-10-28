@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "go_default_library",
     srcs = ["types.go"],
+    importmap = "kope.io/networking/vendor/github.com/json-iterator/go/output_tests/struct/everything",
     importpath = "github.com/json-iterator/go/output_tests/struct/everything",
     visibility = ["//visibility:public"],
 )

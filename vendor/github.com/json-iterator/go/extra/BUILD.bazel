@@ -8,6 +8,7 @@ go_library(
         "privat_fields.go",
         "time_as_int64_codec.go",
     ],
+    importmap = "kope.io/networking/vendor/github.com/json-iterator/go/extra",
     importpath = "github.com/json-iterator/go/extra",
     visibility = ["//visibility:public"],
     deps = ["//vendor/github.com/json-iterator/go:go_default_library"],
@@ -24,6 +25,6 @@ go_test(
     embed = [":go_default_library"],
     deps = [
         "//vendor/github.com/json-iterator/go:go_default_library",
-        "//vendor/github.com/stretchr/testify/require:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
     ],
 )

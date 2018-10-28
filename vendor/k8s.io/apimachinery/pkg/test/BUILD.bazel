@@ -6,6 +6,7 @@ go_library(
         "util.go",
         "zz_generated.deepcopy.go",
     ],
+    importmap = "kope.io/networking/vendor/k8s.io/apimachinery/pkg/test",
     importpath = "k8s.io/apimachinery/pkg/test",
     visibility = ["//visibility:public"],
     deps = [

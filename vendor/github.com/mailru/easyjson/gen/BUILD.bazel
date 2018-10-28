@@ -7,6 +7,7 @@ go_library(
         "encoder.go",
         "generator.go",
     ],
+    importmap = "kope.io/networking/vendor/github.com/mailru/easyjson/gen",
     importpath = "github.com/mailru/easyjson/gen",
     visibility = ["//visibility:public"],
     deps = ["//vendor/github.com/mailru/easyjson:go_default_library"],

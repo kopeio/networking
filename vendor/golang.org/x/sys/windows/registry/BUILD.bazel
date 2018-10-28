@@ -3,16 +3,13 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "go_default_library",
     srcs = [
+        "key.go",
         "mksyscall.go",
-    ] + select({
-        "@io_bazel_rules_go//go/platform:windows": [
-            "key.go",
-            "syscall.go",
-            "value.go",
-            "zsyscall_windows.go",
-        ],
-        "//conditions:default": [],
-    }),
+        "syscall.go",
+        "value.go",
+        "zsyscall_windows.go",
+    ],
+    importmap = "kope.io/networking/vendor/golang.org/x/sys/windows/registry",
     importpath = "golang.org/x/sys/windows/registry",
     visibility = ["//visibility:public"],
     deps = select({
@@ -25,27 +22,9 @@ go_library(
 
 go_test(
     name = "go_default_test",
-    srcs = select({
-        "@io_bazel_rules_go//go/platform:windows": [
-            "export_test.go",
-        ],
-        "//conditions:default": [],
-    }),
+    srcs = [
+        "export_test.go",
+        "registry_test.go",
+    ],
     embed = [":go_default_library"],
-)
-
-go_test(
-    name = "go_default_xtest",
-    srcs = select({
-        "@io_bazel_rules_go//go/platform:windows": [
-            "registry_test.go",
-        ],
-        "//conditions:default": [],
-    }),
-    deps = select({
-        "@io_bazel_rules_go//go/platform:windows": [
-            ":go_default_library",
-        ],
-        "//conditions:default": [],
-    }),
 )
