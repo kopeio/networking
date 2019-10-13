@@ -2,7 +2,7 @@
 
 set -ex
 
-dep ensure
+GO111MODULE=on go mod vendor
 find vendor -name "BUILD" -delete
 find vendor -name "BUILD.bazel" -delete
 bazel run //:gazelle -- -proto=disable
