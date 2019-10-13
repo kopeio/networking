@@ -2,8 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("@bazel_gazelle//:def.bzl", "gazelle")
 
 # gazelle:prefix kope.io/networking
+# gazelle:proto disable_global
 gazelle(
     name = "gazelle",
+    command = "fix",
     external = "vendored",
 )
 
