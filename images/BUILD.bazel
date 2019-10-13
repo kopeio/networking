@@ -23,6 +23,5 @@ container_push(
     image = ":networking-agent",
     registry = "index.docker.io",
     repository = "{STABLE_DOCKER_REGISTRY}/networking-agent",
-    stamp = True,
     tag = "{STABLE_DOCKER_TAG}",
 )
