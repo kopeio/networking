@@ -58,10 +58,10 @@ load(
 
 container_pull(
     name = "debian-base-amd64",
-    digest = "sha256:86176bc8ccdc4d8ea7fbf6ba4b57fcefc2cb61ff7413114630940474ff9bf751",
+    digest = "sha256:5f25d97ece9076612b64bb551e12f1e39a520176b684e2d663ce1bd53c5d0618",
     registry = "k8s.gcr.io",
     repository = "debian-base-amd64",
-    tag = "0.4.0",  # ignored, but kept here for documentation
+    tag = "v1.0.0",  # ignored, but kept here for documentation
 )
 
 ##=============================================================================
