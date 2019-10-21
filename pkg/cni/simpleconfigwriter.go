@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 )
 
 // SimpleConfigWriter writes to a single cni config file
@@ -51,14 +51,14 @@ func (w *SimpleConfigWriter) WriteCNIConfig(podCIDR *net.IPNet) error {
 
 	existing := string(b)
 	if existing == expected {
-		glog.V(4).Infof("cni config at %s matches expected", w.Path)
+		klog.V(4).Infof("cni config at %s matches expected", w.Path)
 		return nil
 	}
 
 	if err := ioutil.WriteFile(w.Path, []byte(expected), 0644); err != nil {
 		return fmt.Errorf("error writing cni config %s: %v", w.Path, err)
 	}
-	glog.Infof("wrote cni config to %s", w.Path)
+	klog.Infof("wrote cni config to %s", w.Path)
 
 	return nil
 }

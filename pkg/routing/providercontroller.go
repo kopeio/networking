@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/glog"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/klog"
 	"kope.io/networking/pkg/cni"
 )
 
@@ -35,7 +35,7 @@ func NewController(kubeClient kubernetes.Interface, nodeMap *NodeMap, provider P
 
 // Run starts the NodeController.
 func (c *Controller) Run() {
-	glog.Infof("starting node controller")
+	klog.Infof("starting node controller")
 
 	go c.runWatcher()
 }
@@ -45,14 +45,14 @@ func (c *Controller) runWatcher() {
 		if c.nodeMap.IsReady() {
 			break
 		}
-		glog.Infof("node map not yet ready")
+		klog.Infof("node map not yet ready")
 		time.Sleep(1 * time.Second)
 	}
-	glog.Infof("node map is ready")
+	klog.Infof("node map is ready")
 	for {
 		err := c.provider.EnsureCIDRs(c.nodeMap)
 		if err != nil {
-			glog.Warningf("Unexpected error in provider controller, will retry: %v", err)
+			klog.Warningf("Unexpected error in provider controller, will retry: %v", err)
 			time.Sleep(10 * time.Second)
 			continue
 		} else {
@@ -61,7 +61,7 @@ func (c *Controller) runWatcher() {
 
 		if c.cniConfigWriter != nil && c.nodeMap.me != nil {
 			if err := c.cniConfigWriter.WriteCNIConfig(c.nodeMap.me.PodCIDR); err != nil {
-				glog.Warningf("unexpected error writing CNI config, will retry: %v", err)
+				klog.Warningf("unexpected error writing CNI config, will retry: %v", err)
 				time.Sleep(10 * time.Second)
 				continue
 			}
@@ -69,7 +69,7 @@ func (c *Controller) runWatcher() {
 
 		if c.nodeMap.me != nil && !c.nodeMap.me.NetworkAvailable {
 			nodeName := c.nodeMap.me.Name
-			glog.Infof("marking node %q as network-ready in node status", nodeName)
+			klog.Infof("marking node %q as network-ready in node status", nodeName)
 			currentTime := metav1.Now()
 			err = setNodeCondition(c.kubeClient, nodeName, v1.NodeCondition{
 				Type:               v1.NodeNetworkUnavailable,
@@ -81,9 +81,9 @@ func (c *Controller) runWatcher() {
 			if err != nil {
 				// Very small chance of conflict
 				if !errors.IsConflict(err) {
-					glog.Errorf("Error updating node %s: %v", nodeName, err)
+					klog.Errorf("Error updating node %s: %v", nodeName, err)
 				}
-				glog.Errorf("Error updating node %s, will retry: %v", nodeName, err)
+				klog.Errorf("Error updating node %s, will retry: %v", nodeName, err)
 			}
 
 		}

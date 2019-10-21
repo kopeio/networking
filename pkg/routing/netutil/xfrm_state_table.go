@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/golang/glog"
 	"github.com/vishvananda/netlink"
+	"k8s.io/klog"
 	"kope.io/networking/pkg/util"
 )
 
@@ -26,13 +26,13 @@ func (p *XfrmStateTable) Ensure(expectedList []*netlink.XfrmState) error {
 	for i := range actualList {
 		a := &actualList[i]
 		actualMap[a.Spi] = a
-		glog.Infof("Actual State: %v", util.AsJsonString(a))
+		klog.Infof("Actual State: %v", util.AsJsonString(a))
 	}
 
 	expected := make(map[int]*netlink.XfrmState)
 	for _, e := range expectedList {
 		if expected[e.Spi] != nil {
-			glog.Fatalf("Found duplicate ESP SPI %d %v %v", e.Spi, e, expected[e.Spi])
+			klog.Fatalf("Found duplicate ESP SPI %d %v %v", e.Spi, e, expected[e.Spi])
 		}
 		expected[e.Spi] = e
 	}
@@ -52,7 +52,7 @@ func (p *XfrmStateTable) Ensure(expectedList []*netlink.XfrmState) error {
 		}
 
 		if !xfrmStateEqual(a, e) {
-			glog.Infof("State change for %d:\n\t%s\n\t%s", spi, util.AsJsonString(a), util.AsJsonString(e))
+			klog.Infof("State change for %d:\n\t%s\n\t%s", spi, util.AsJsonString(a), util.AsJsonString(e))
 			updates = append(updates, e)
 		}
 	}
@@ -68,7 +68,7 @@ func (p *XfrmStateTable) Ensure(expectedList []*netlink.XfrmState) error {
 
 	if len(create) != 0 {
 		for _, p := range create {
-			glog.Infof("creating state %v", util.AsJsonString(p))
+			klog.Infof("creating state %v", util.AsJsonString(p))
 			err := netlink.XfrmStateAdd(p)
 			if err != nil {
 				return fmt.Errorf("error creating state %v: %v", p, err)
@@ -77,7 +77,7 @@ func (p *XfrmStateTable) Ensure(expectedList []*netlink.XfrmState) error {
 	}
 	if len(updates) != 0 {
 		for _, p := range updates {
-			glog.Infof("updating state %v", util.AsJsonString(p))
+			klog.Infof("updating state %v", util.AsJsonString(p))
 			err := netlink.XfrmStateUpdate(p)
 			if err != nil {
 				return fmt.Errorf("error updating state %v: %v", p, err)
@@ -87,7 +87,7 @@ func (p *XfrmStateTable) Ensure(expectedList []*netlink.XfrmState) error {
 
 	if len(remove) != 0 {
 		for _, p := range remove {
-			glog.Infof("removing state %v", util.AsJsonString(p))
+			klog.Infof("removing state %v", util.AsJsonString(p))
 			err := netlink.XfrmStateDel(p)
 			if err != nil {
 				return fmt.Errorf("error removing state: %v", err)

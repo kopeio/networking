@@ -3,8 +3,8 @@ package netutil
 import (
 	"fmt"
 
-	"github.com/golang/glog"
 	"github.com/vishvananda/netlink"
+	"k8s.io/klog"
 	"kope.io/networking/pkg/util"
 )
 
@@ -12,24 +12,24 @@ type RouteTable struct {
 }
 
 func (t *RouteTable) Ensure(link netlink.Link, expected []*netlink.Route, deleteExtraRoutes bool) error {
-	glog.V(2).Infof("NETLINK: ip route show")
+	klog.V(2).Infof("NETLINK: ip route show")
 	actualList, err := netlink.RouteList(link, netlink.FAMILY_ALL)
 	if err != nil {
 		return fmt.Errorf("error doing `ip route show`: %v", err)
 	}
 
-	glog.V(2).Infof("TODO: using strings as ipnet key is inefficient")
+	klog.V(2).Infof("TODO: using strings as ipnet key is inefficient")
 	actualMap := make(map[string]*netlink.Route)
 	for i := range actualList {
 		a := &actualList[i]
 		if a.Dst == nil {
 			// Probably the default gateway
-			glog.V(2).Infof("ignoring route with no dst: %v", util.AsJsonString(a))
+			klog.V(2).Infof("ignoring route with no dst: %v", util.AsJsonString(a))
 			continue
 		}
 		k := a.Dst.String()
 		actualMap[k] = a
-		glog.V(4).Infof("Actual route: %v", util.AsJsonString(a))
+		klog.V(4).Infof("Actual route: %v", util.AsJsonString(a))
 	}
 
 	expectedMap := make(map[string]*netlink.Route)
@@ -43,7 +43,7 @@ func (t *RouteTable) Ensure(link netlink.Link, expected []*netlink.Route, delete
 		}
 		k := e.Dst.String()
 		expectedMap[k] = e
-		glog.V(4).Infof("Expected route: %v", util.AsJsonString(e))
+		klog.V(4).Infof("Expected route: %v", util.AsJsonString(e))
 
 		// Note that we process expected in order
 		// TODO: I guess we could sort via dependencies?
@@ -55,7 +55,7 @@ func (t *RouteTable) Ensure(link netlink.Link, expected []*netlink.Route, delete
 		}
 
 		if !routeEqual(a, e) {
-			glog.V(2).Infof("change for %s:\n\ta: %s\n\te: %s", k, util.AsJsonString(a), util.AsJsonString(e))
+			klog.V(2).Infof("change for %s:\n\ta: %s\n\te: %s", k, util.AsJsonString(a), util.AsJsonString(e))
 			remove = append(remove, a)
 			create = append(create, e)
 		}
@@ -73,7 +73,7 @@ func (t *RouteTable) Ensure(link netlink.Link, expected []*netlink.Route, delete
 
 		if len(remove) != 0 {
 			for _, r := range remove {
-				glog.Infof("NETLINK: ip route del %v", util.AsJsonString(r))
+				klog.Infof("NETLINK: ip route del %v", util.AsJsonString(r))
 				err := netlink.RouteDel(r)
 				if err != nil {
 					return fmt.Errorf("error removing route: %v", err)
@@ -84,8 +84,8 @@ func (t *RouteTable) Ensure(link netlink.Link, expected []*netlink.Route, delete
 
 	if len(create) != 0 {
 		for _, r := range create {
-			glog.Infof("NETLINK: ip route add %s via %s", r.Dst, r.Gw)
-			glog.V(2).Infof(" full route object: %v", util.AsJsonString(r))
+			klog.Infof("NETLINK: ip route add %s via %s", r.Dst, r.Gw)
+			klog.V(2).Infof(" full route object: %v", util.AsJsonString(r))
 			err := netlink.RouteAdd(r)
 			if err != nil {
 				return fmt.Errorf("error creating route %v: %v", r, err)

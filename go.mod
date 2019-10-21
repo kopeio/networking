@@ -10,7 +10,6 @@ replace k8s.io/client-go => k8s.io/client-go v0.0.0-20191016111102-bec269661e48
 
 require (
 	github.com/ghodss/yaml v1.0.0
-	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/googleapis/gnostic v0.1.0 // indirect
 	github.com/gregjones/httpcache v0.0.0-20170926212834-c1f8028e62ad // indirect
 	github.com/spf13/pflag v1.0.3
@@ -19,4 +18,5 @@ require (
 	k8s.io/api v0.0.0-20191016110408-35e52d86657a
 	k8s.io/apimachinery v0.0.0-20191004115801-a2eda9f80ab8
 	k8s.io/client-go v2.0.0-alpha.0.0.20181026185218-bf181536cb4d+incompatible
+	k8s.io/klog v1.0.0
 )

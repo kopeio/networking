@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/golang/glog"
 	"github.com/vishvananda/netlink"
+	"k8s.io/klog"
 	"kope.io/networking/pkg/util"
 )
 
@@ -22,7 +22,7 @@ func (t *NeighTable) Ensure(link netlink.Link, expected []*netlink.Neigh) error 
 	linkName := link.Attrs().Name
 	linkIndex := link.Attrs().Index
 
-	glog.V(2).Infof("NETLINK: ip neigh show dev %s", linkName)
+	klog.V(2).Infof("NETLINK: ip neigh show dev %s", linkName)
 	actualList, err := netlink.NeighList(linkIndex, netlink.FAMILY_ALL)
 	if err != nil {
 		return fmt.Errorf("error listing layer2 config: %v", err)
@@ -33,24 +33,24 @@ func (t *NeighTable) Ensure(link netlink.Link, expected []*netlink.Neigh) error 
 	for i := range actualList {
 		a := &actualList[i]
 		if a.IP == nil {
-			glog.Errorf("ignoring unexpected layer2 entry with no IP: %v", a)
+			klog.Errorf("ignoring unexpected layer2 entry with no IP: %v", a)
 			continue
 		}
 		k := a.IP.String()
 		actualMap[k] = a
-		glog.V(4).Infof("Actual layer2 entry: %v", util.AsJsonString(a))
+		klog.V(4).Infof("Actual layer2 entry: %v", util.AsJsonString(a))
 	}
 
 	expectedMap := make(map[string]*netlink.Neigh)
 
 	for _, e := range expected {
 		if e.IP == nil {
-			glog.Errorf("ignoring unexpected layer2 entry with no IP: %v", e)
+			klog.Errorf("ignoring unexpected layer2 entry with no IP: %v", e)
 			continue
 		}
 		k := e.IP.String()
 		expectedMap[k] = e
-		glog.V(4).Infof("Expected layer2 entry: %v", util.AsJsonString(e))
+		klog.V(4).Infof("Expected layer2 entry: %v", util.AsJsonString(e))
 	}
 
 	var upsert []*netlink.Neigh
@@ -64,7 +64,7 @@ func (t *NeighTable) Ensure(link netlink.Link, expected []*netlink.Neigh) error 
 		}
 
 		if !neighEqual(a, e) {
-			glog.V(2).Infof("neigh change for %s:\n\t%s\n\t%s", k, util.AsJsonString(a), util.AsJsonString(e))
+			klog.V(2).Infof("neigh change for %s:\n\t%s\n\t%s", k, util.AsJsonString(a), util.AsJsonString(e))
 			upsert = append(upsert, e)
 		}
 	}
@@ -82,8 +82,8 @@ func (t *NeighTable) Ensure(link netlink.Link, expected []*netlink.Neigh) error 
 	//
 	//if len(remove) != 0 {
 	//	for _, r := range remove {
-	//		glog.Infof("NETLINK: ip neigh delete %v", routecontroller.AsJsonString(r))
-	//		glog.V(2).Infof(" full neigh: %v", routecontroller.AsJsonString(r))
+	//		klog.Infof("NETLINK: ip neigh delete %v", routecontroller.AsJsonString(r))
+	//		klog.V(2).Infof(" full neigh: %v", routecontroller.AsJsonString(r))
 	//		err := netlink.NeighDel(r)
 	//		if err != nil {
 	//			return fmt.Errorf("error removing route entry: %v", err)
@@ -93,8 +93,8 @@ func (t *NeighTable) Ensure(link netlink.Link, expected []*netlink.Neigh) error 
 
 	if len(upsert) != 0 {
 		for _, r := range upsert {
-			glog.Infof("NETLINK: ip neigh replace to %s lladdr %s dev %d", r.IP, r.HardwareAddr, r.LinkIndex)
-			glog.V(2).Infof(" full neigh: %v", util.AsJsonString(r))
+			klog.Infof("NETLINK: ip neigh replace to %s lladdr %s dev %d", r.IP, r.HardwareAddr, r.LinkIndex)
+			klog.V(2).Infof(" full neigh: %v", util.AsJsonString(r))
 			err := netlink.NeighSet(r)
 			if err != nil {
 				return fmt.Errorf("error doing `ip neigh replace to %s lladdr %s dev %d`: %v", r.IP, r.HardwareAddr, r.LinkIndex, err)

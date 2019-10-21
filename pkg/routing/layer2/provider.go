@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"syscall"
 
-	"github.com/golang/glog"
 	"github.com/vishvananda/netlink"
+	"k8s.io/klog"
 	"kope.io/networking/pkg/routing"
 	"kope.io/networking/pkg/routing/netutil"
 )
@@ -63,11 +63,11 @@ func (p *Layer2RoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 		}
 
 		if remote.Address == nil {
-			glog.Infof("Node %q did not have address; ignoring", remote.Name)
+			klog.Infof("Node %q did not have address; ignoring", remote.Name)
 			continue
 		}
 		if remote.PodCIDR == nil {
-			glog.Infof("Node %q did not have PodCIDR; ignoring", remote.Name)
+			klog.Infof("Node %q did not have PodCIDR; ignoring", remote.Name)
 			continue
 		}
 

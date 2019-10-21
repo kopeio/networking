@@ -3,8 +3,8 @@ package netutil
 import (
 	"fmt"
 
-	"github.com/golang/glog"
 	"github.com/vishvananda/netlink"
+	"k8s.io/klog"
 	"kope.io/networking/pkg/util"
 )
 
@@ -22,7 +22,7 @@ func (t *XfrmPolicyTable) Ensure(expected []*netlink.XfrmPolicy) error {
 	}
 
 	for _, p := range actual {
-		glog.Infof("Actual Policy: %v", util.AsJsonString(p))
+		klog.Infof("Actual Policy: %v", util.AsJsonString(p))
 	}
 
 	var create []*netlink.XfrmPolicy
@@ -37,7 +37,7 @@ func (t *XfrmPolicyTable) Ensure(expected []*netlink.XfrmPolicy) error {
 			p := &actual[i]
 			if xfrmPolicyMatches(p, e) {
 				if a != nil {
-					glog.Warningf("Found duplicate matching policies: %v and %v", util.AsJsonString(p), util.AsJsonString(a))
+					klog.Warningf("Found duplicate matching policies: %v and %v", util.AsJsonString(p), util.AsJsonString(a))
 				}
 				a = p
 				actualMatched[i] = true
@@ -52,7 +52,7 @@ func (t *XfrmPolicyTable) Ensure(expected []*netlink.XfrmPolicy) error {
 		// Avoid spurious changes
 		e.Index = a.Index
 		if !xfrmPolicyEqual(a, e) {
-			glog.Infof("Policy changed:\n\t%s\n\t%s", a, e)
+			klog.Infof("Policy changed:\n\t%s\n\t%s", a, e)
 			updates = append(updates, e)
 		}
 	}
@@ -66,7 +66,7 @@ func (t *XfrmPolicyTable) Ensure(expected []*netlink.XfrmPolicy) error {
 
 	if len(create) != 0 {
 		for _, p := range create {
-			glog.Infof("creating policy %v", util.AsJsonString(p))
+			klog.Infof("creating policy %v", util.AsJsonString(p))
 			err := netlink.XfrmPolicyAdd(p)
 			if err != nil {
 				return fmt.Errorf("error creating policy: %v", err)
@@ -76,7 +76,7 @@ func (t *XfrmPolicyTable) Ensure(expected []*netlink.XfrmPolicy) error {
 
 	if len(updates) != 0 {
 		for _, p := range updates {
-			glog.Infof("updating policy %v", util.AsJsonString(p))
+			klog.Infof("updating policy %v", util.AsJsonString(p))
 			err := netlink.XfrmPolicyUpdate(p)
 			if err != nil {
 				return fmt.Errorf("error updating policy: %v", err)
@@ -86,7 +86,7 @@ func (t *XfrmPolicyTable) Ensure(expected []*netlink.XfrmPolicy) error {
 
 	if len(remove) != 0 {
 		for _, p := range remove {
-			glog.Infof("removing policy %v", util.AsJsonString(p))
+			klog.Infof("removing policy %v", util.AsJsonString(p))
 			err := netlink.XfrmPolicyDel(p)
 			if err != nil {
 				return fmt.Errorf("error removing policy: %v", err)
