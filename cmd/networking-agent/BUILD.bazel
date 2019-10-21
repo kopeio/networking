@@ -10,6 +10,7 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//:go_default_library",
+        "//pkg/cni:go_default_library",
         "//pkg/routing:go_default_library",
         "//pkg/routing/gre:go_default_library",
         "//pkg/routing/ipsec:go_default_library",

@@ -6,25 +6,28 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"kope.io/networking/pkg/cni"
 )
 
 // Controller updates the routing provider, if any changes have been made
 type Controller struct {
-	nodeMap    *NodeMap
-	provider   Provider
-	kubeClient kubernetes.Interface
+	nodeMap         *NodeMap
+	provider        Provider
+	kubeClient      kubernetes.Interface
+	cniConfigWriter cni.ConfigWriter
 }
 
 // NewController creates a routing.Controller
-func NewController(kubeClient kubernetes.Interface, nodeMap *NodeMap, provider Provider) (*Controller, error) {
+func NewController(kubeClient kubernetes.Interface, nodeMap *NodeMap, provider Provider, cniConfigWriter cni.ConfigWriter) (*Controller, error) {
 	c := &Controller{
-		kubeClient: kubeClient,
-		nodeMap:    nodeMap,
-		provider:   provider,
+		kubeClient:      kubeClient,
+		nodeMap:         nodeMap,
+		provider:        provider,
+		cniConfigWriter: cniConfigWriter,
 	}
 
 	return c, nil
@@ -48,12 +51,20 @@ func (c *Controller) runWatcher() {
 	glog.Infof("node map is ready")
 	for {
 		err := c.provider.EnsureCIDRs(c.nodeMap)
-
 		if err != nil {
 			glog.Warningf("Unexpected error in provider controller, will retry: %v", err)
 			time.Sleep(10 * time.Second)
+			continue
 		} else {
 			time.Sleep(1 * time.Second)
+		}
+
+		if c.cniConfigWriter != nil && c.nodeMap.me != nil {
+			if err := c.cniConfigWriter.WriteCNIConfig(c.nodeMap.me.PodCIDR); err != nil {
+				glog.Warningf("unexpected error writing CNI config, will retry: %v", err)
+				time.Sleep(10 * time.Second)
+				continue
+			}
 		}
 
 		if c.nodeMap.me != nil && !c.nodeMap.me.NetworkAvailable {

@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "configwriter.go",
+        "simpleconfigwriter.go",
+    ],
+    importpath = "kope.io/networking/pkg/cni",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/golang/glog:go_default_library"],
+)

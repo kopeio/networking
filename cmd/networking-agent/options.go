@@ -43,6 +43,9 @@ type Options struct {
 
 	// PodCIDR is the address space allocated to pod networking
 	PodCIDR string `json:"podCIDR"`
+
+	// CNIConfigPath is the path to which we should write our CNI config
+	CNIConfigPath string `json:"cniConfigPath"`
 }
 
 type IPSECOptions struct {
@@ -91,6 +94,8 @@ func (options *Options) AddFlags(flags *pflag.FlagSet) {
 	flags.StringVar(&options.IPSEC.Encryption, "ipsec-encryption", options.IPSEC.Encryption, "encryption method to use (for IPSEC)")
 	flags.StringVar(&options.IPSEC.Authentication, "ipsec-authentication", options.IPSEC.Authentication, "authentication method to use (for IPSEC)")
 	flags.StringVar(&options.IPSEC.Encapsulation, "ipsec-encapsulation", options.IPSEC.Encapsulation, "encapsulation method to use (for IPSEC)")
+
+	flags.StringVar(&options.CNIConfigPath, "cni-config", options.CNIConfigPath, "path where we should write CNI configuration")
 
 	// I can't figure out how to get a serviceaccount in a manifest-controlled pod
 	//inCluster = flags.Bool("running-in-cluster", true,
