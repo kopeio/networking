@@ -11,7 +11,7 @@ container_image(
     name = "networking-agent",
     base = "@debian-base-amd64//image",
     directory = "/",
-    entrypoint = "/networking-agent",
+    entrypoint = [ "/networking-agent" ], # Subtle!  Passing a raw string wraps with /bin/sh -c, which means that adding args doesn't work as you might expect
     files = [
         "//cmd/networking-agent",
     ],
