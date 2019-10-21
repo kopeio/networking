@@ -17,13 +17,13 @@ limitations under the License.
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"time"
 
 	"github.com/ghodss/yaml"
-	"github.com/spf13/pflag"
 )
 
 type Options struct {
@@ -71,7 +71,7 @@ func (o *Options) InitDefaults() {
 	o.IPSEC.Encryption = "aes"
 }
 
-func (options *Options) AddFlags(flags *pflag.FlagSet) {
+func (options *Options) AddFlags(flags *flag.FlagSet) {
 	flags.DurationVar(&options.ResyncPeriod, "sync-period", options.ResyncPeriod,
 		`Relist and confirm cloud resources this often.`)
 
