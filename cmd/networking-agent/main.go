@@ -17,7 +17,7 @@ limitations under the License.
 package main
 
 import (
-	goflag "flag"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -28,7 +28,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/spf13/pflag"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -67,13 +66,13 @@ func main() {
 		klog.Fatalf("error reading config file: %v", err)
 	}
 
-	flags := pflag.NewFlagSet("", pflag.ExitOnError)
+	flags := flag.NewFlagSet("", flag.ExitOnError)
 	options.AddFlags(flags)
 
-	klog.InitFlags(nil)
+	klog.InitFlags(flags)
 
 	if options.LogLevel != nil {
-		goflag.Set("v", strconv.Itoa(*options.LogLevel))
+		flags.Set("v", strconv.Itoa(*options.LogLevel))
 	}
 
 	flags.Parse(os.Args)
