@@ -28,11 +28,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/spf13/pflag"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/klog"
 	"kope.io/networking"
 	"kope.io/networking/pkg/cni"
 	"kope.io/networking/pkg/routing"
@@ -64,18 +64,13 @@ func main() {
 
 	err := options.LoadFrom("/config/config.yaml")
 	if err != nil && !os.IsNotExist(err) {
-		glog.Fatalf("error reading config file: %v", err)
+		klog.Fatalf("error reading config file: %v", err)
 	}
 
 	flags := pflag.NewFlagSet("", pflag.ExitOnError)
 	options.AddFlags(flags)
 
-	// Trick to avoid 'logging before flag.Parse' warning
-	goflag.CommandLine.Parse([]string{})
-
-	goflag.Set("logtostderr", "true")
-
-	flags.AddGoFlagSet(goflag.CommandLine)
+	klog.InitFlags(nil)
 
 	if options.LogLevel != nil {
 		goflag.Set("v", strconv.Itoa(*options.LogLevel))
@@ -85,82 +80,82 @@ func main() {
 
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		glog.Errorf("error building client configuration: %v", err)
+		klog.Errorf("error building client configuration: %v", err)
 		os.Exit(1)
 	}
 
 	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		glog.Fatalf("error building REST client: %v", err)
+		klog.Fatalf("error building REST client: %v", err)
 	}
 
 	var matcher func(node *v1.Node) bool
 	if nodeName := os.Getenv("NODE_NAME"); nodeName != "" {
 		// Passing NODE_NAME via downward API is preferred
-		glog.Infof("will match node on name=%q", nodeName)
+		klog.Infof("will match node on name=%q", nodeName)
 		matcher = func(node *v1.Node) bool {
 			return node.Name == nodeName
 		}
 	} else if options.MachineIDPath != "" {
-		glog.Warningf("using MachineIDPath is deprecated - prefer passing NODE_NAME via downward API")
+		klog.Warningf("using MachineIDPath is deprecated - prefer passing NODE_NAME via downward API")
 
 		b, err := ioutil.ReadFile(options.MachineIDPath)
 		if err != nil {
-			glog.Fatalf("error reading machine-id file %q: %v", options.MachineIDPath, err)
+			klog.Fatalf("error reading machine-id file %q: %v", options.MachineIDPath, err)
 		}
 		machineID := string(b)
 		machineID = strings.TrimSpace(machineID)
 
-		glog.Infof("will match node on machineid=%q", machineID)
+		klog.Infof("will match node on machineid=%q", machineID)
 		matcher = func(node *v1.Node) bool {
 			return node.Status.NodeInfo.MachineID == machineID
 		}
 	} else if options.SystemUUIDPath != "" {
-		glog.Warningf("using SystemUUIDPath is deprecated - prefer passing NODE_NAME via downward API")
+		klog.Warningf("using SystemUUIDPath is deprecated - prefer passing NODE_NAME via downward API")
 
 		b, err := ioutil.ReadFile(options.SystemUUIDPath)
 		if err != nil {
-			glog.Fatalf("error reading system-uuid file %q: %v", options.SystemUUIDPath, err)
+			klog.Fatalf("error reading system-uuid file %q: %v", options.SystemUUIDPath, err)
 		}
 		systemUUID := string(b)
 		systemUUID = strings.TrimSpace(systemUUID)
 
 		// If the BIOS isn't correctly configured, we'll
 		if systemUUID == "03000200-0400-0500-0006-000700080009" {
-			glog.Fatalf("detected well-known invalid system-uuid 03000200-0400-0500-0006-000700080009")
+			klog.Fatalf("detected well-known invalid system-uuid 03000200-0400-0500-0006-000700080009")
 		}
 
-		glog.Infof("will match node on systemUUID=%q", systemUUID)
+		klog.Infof("will match node on systemUUID=%q", systemUUID)
 		matcher = func(node *v1.Node) bool {
 			return node.Status.NodeInfo.SystemUUID == systemUUID
 		}
 	} else if options.BootIDPath != "" {
-		glog.Warningf("using BootIDPath is deprecated - prefer passing NODE_NAME via downward API")
+		klog.Warningf("using BootIDPath is deprecated - prefer passing NODE_NAME via downward API")
 
 		b, err := ioutil.ReadFile(options.BootIDPath)
 		if err != nil {
-			glog.Fatalf("error reading boot-id file %q: %v", options.BootIDPath, err)
+			klog.Fatalf("error reading boot-id file %q: %v", options.BootIDPath, err)
 		}
 		bootID := string(b)
 		bootID = strings.TrimSpace(bootID)
 
-		glog.Infof("will match node on bootID=%q", bootID)
+		klog.Infof("will match node on bootID=%q", bootID)
 		matcher = func(node *v1.Node) bool {
 			return node.Status.NodeInfo.BootID == bootID
 		}
 	} else {
-		glog.Warningf("using NodeName is deprecated - prefer passing NODE_NAME via downward API")
+		klog.Warningf("using NodeName is deprecated - prefer passing NODE_NAME via downward API")
 
 		matchNodeName := options.NodeName
 		if matchNodeName == "" {
 			hostname, err := os.Hostname()
 			if err != nil {
-				glog.Fatalf("error getting hostname: %v", err)
+				klog.Fatalf("error getting hostname: %v", err)
 			}
-			glog.Infof("Using hostname as node name: %q", hostname)
+			klog.Infof("Using hostname as node name: %q", hostname)
 			matchNodeName = hostname
 		}
-		glog.Infof("will match node on name=%q", matchNodeName)
+		klog.Infof("will match node on name=%q", matchNodeName)
 		matcher = func(node *v1.Node) bool {
 			return node.Name == matchNodeName
 		}
@@ -172,7 +167,7 @@ func main() {
 	if targetLinkName == "" {
 		targetLinkName, err = findTargetLink()
 		if targetLinkName == "" || err != nil {
-			glog.Fatalf("unable to determine network device; pass --target to specify: %v", err)
+			klog.Fatalf("unable to determine network device; pass --target to specify: %v", err)
 		}
 	}
 
@@ -199,7 +194,7 @@ func main() {
 		case "aes":
 			encryptionStrategy = &ipsec.AesEncryptionStrategy{}
 		default:
-			glog.Fatalf("unknown ipsec-encryption: %v", options.IPSEC.Encryption)
+			klog.Fatalf("unknown ipsec-encryption: %v", options.IPSEC.Encryption)
 		}
 		switch options.IPSEC.Authentication {
 		case "none":
@@ -207,7 +202,7 @@ func main() {
 		case "sha1":
 			authenticationStrategy = &ipsec.HmacSha1AuthenticationStrategy{}
 		default:
-			glog.Fatalf("unknown ipsec-authentication: %v", options.IPSEC.Authentication)
+			klog.Fatalf("unknown ipsec-authentication: %v", options.IPSEC.Authentication)
 		}
 		switch options.IPSEC.Encapsulation {
 		case "udp":
@@ -215,32 +210,32 @@ func main() {
 		case "esp":
 			encapsulationStrategy = &ipsec.EspEncapsulationStrategy{}
 		default:
-			glog.Fatalf("unknown ipsec-encapsulation: %v", options.IPSEC.Encapsulation)
+			klog.Fatalf("unknown ipsec-encapsulation: %v", options.IPSEC.Encapsulation)
 		}
 
 		var ipsecProvider *ipsec.IpsecRoutingProvider
 		ipsecProvider, err = ipsec.NewIpsecRoutingProvider(authenticationStrategy, encryptionStrategy, encapsulationStrategy)
 		if err == nil {
 			// TODO: This is only because state update is not working
-			glog.Warningf("TODO Doing ip xfrm flush; remove!!")
+			klog.Warningf("TODO Doing ip xfrm flush; remove!!")
 			err := ipsecProvider.Flush()
 			if err != nil {
-				glog.Fatalf("cannot flush tables")
+				klog.Fatalf("cannot flush tables")
 			}
 		}
 		provider = ipsecProvider
 
 	default:
-		glog.Fatalf("provider not known: %q", options.Provider)
+		klog.Fatalf("provider not known: %q", options.Provider)
 	}
 
 	if err != nil {
-		glog.Fatalf("failed to build provider %q: %v", options.Provider, err)
+		klog.Fatalf("failed to build provider %q: %v", options.Provider, err)
 	}
 
 	//c, err := newRouteController(kubeClient, *resyncPeriod, *nodeName, bootID, systemUUID, machineID, provider)
 	//if err != nil {
-	//	glog.Fatalf("%v", err)
+	//	klog.Fatalf("%v", err)
 	//}
 
 	var cniWriter cni.ConfigWriter
@@ -250,13 +245,13 @@ func main() {
 
 	c, err := watchers.NewNodeController(kubeClient, nodeMap)
 	if err != nil {
-		glog.Fatalf("Failed to build node controller: %v", err)
+		klog.Fatalf("Failed to build node controller: %v", err)
 	}
 	go c.Run()
 
 	rc, err := routing.NewController(kubeClient, nodeMap, provider, cniWriter)
 	if err != nil {
-		glog.Fatalf("Failed to build routing controller: %v", err)
+		klog.Fatalf("Failed to build routing controller: %v", err)
 	}
 	go rc.Run()
 	//go registerHandlers(c)
@@ -292,21 +287,21 @@ func main() {
 //		Addr:    fmt.Sprintf(":%v", *healthzPort),
 //		Handler: mux,
 //	}
-//	glog.Fatal(server.ListenAndServe())
+//	klog.Fatal(server.ListenAndServe())
 //}
 
 func handleSigterm(c *watchers.NodeController) {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGTERM)
 	<-signalChan
-	glog.Infof("Received SIGTERM, shutting down")
+	klog.Infof("Received SIGTERM, shutting down")
 
 	exitCode := 0
 	if err := c.Stop(); err != nil {
-		glog.Infof("Error during shutdown %v", err)
+		klog.Infof("Error during shutdown %v", err)
 		exitCode = 1
 	}
-	glog.Infof("Exiting with %v", exitCode)
+	klog.Infof("Exiting with %v", exitCode)
 	os.Exit(exitCode)
 }
 
@@ -324,13 +319,13 @@ func findTargetLink() (string, error) {
 		name := networkInterface.Name
 
 		if (flags & net.FlagLoopback) != 0 {
-			glog.V(2).Infof("Ignoring interface %s - loopback", name)
+			klog.V(2).Infof("Ignoring interface %s - loopback", name)
 			continue
 		}
 
 		// Not a lot else to go on...
 		if !strings.HasPrefix(name, "eth") && !strings.HasPrefix(name, "en") {
-			glog.V(2).Infof("Ignoring interface %s - name does not look like ethernet device", name)
+			klog.V(2).Infof("Ignoring interface %s - name does not look like ethernet device", name)
 			continue
 		}
 

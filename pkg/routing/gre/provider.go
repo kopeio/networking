@@ -5,8 +5,8 @@ import (
 	"net"
 	"syscall"
 
-	"github.com/golang/glog"
 	"github.com/vishvananda/netlink"
+	"k8s.io/klog"
 	"kope.io/networking/pkg/routing"
 	"kope.io/networking/pkg/routing/netutil"
 )
@@ -44,12 +44,12 @@ func (p *GreRoutingProvider) Close() error {
 func buildTunnelName(ip net.IP) string {
 	ip4 := ip.To4()
 	if ip4 == nil {
-		glog.Warningf("cannot build tunnel name with non-ipv4 IP: %v", ip)
+		klog.Warningf("cannot build tunnel name with non-ipv4 IP: %v", ip)
 		return ""
 	}
 	name := fmt.Sprintf(greLinkNameFormat, ip4[0], ip4[1], ip4[2], ip4[3])
 	if len(name) > greLinkNameMaxLength {
-		glog.Warningf("generated link name that was longer than max: %q", name)
+		klog.Warningf("generated link name that was longer than max: %q", name)
 		return ""
 	}
 	return name
@@ -76,17 +76,17 @@ func (p *GreRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 		}
 
 		if remote.Address == nil {
-			glog.Infof("Node %q did not have address; ignoring", remote.Name)
+			klog.Infof("Node %q did not have address; ignoring", remote.Name)
 			continue
 		}
 		if remote.PodCIDR == nil {
-			glog.Infof("Node %q did not have PodCIDR; ignoring", remote.Name)
+			klog.Infof("Node %q did not have PodCIDR; ignoring", remote.Name)
 			continue
 		}
 
 		tunnelName := buildTunnelName(remote.PodCIDR.IP)
 		if tunnelName == "" {
-			glog.Infof("Node %q has unacceptable PodCIDR %q", remote.Name, remote.PodCIDR.IP)
+			klog.Infof("Node %q has unacceptable PodCIDR %q", remote.Name, remote.PodCIDR.IP)
 			continue
 		}
 
@@ -134,17 +134,17 @@ func (p *GreRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 		}
 
 		if remote.Address == nil {
-			glog.Infof("Node %q did not have address; ignoring", remote.Name)
+			klog.Infof("Node %q did not have address; ignoring", remote.Name)
 			continue
 		}
 		if remote.PodCIDR == nil {
-			glog.Infof("Node %q did not have PodCIDR; ignoring", remote.Name)
+			klog.Infof("Node %q did not have PodCIDR; ignoring", remote.Name)
 			continue
 		}
 
 		tunnelName := buildTunnelName(remote.PodCIDR.IP)
 		if tunnelName == "" {
-			glog.Infof("Node %q has unacceptable PodCIDR %q", remote.Name, remote.PodCIDR.IP)
+			klog.Infof("Node %q has unacceptable PodCIDR %q", remote.Name, remote.PodCIDR.IP)
 			continue
 		}
 

@@ -7,8 +7,8 @@ import (
 	"os/exec"
 	"syscall"
 
-	"github.com/golang/glog"
 	"github.com/vishvananda/netlink"
+	"k8s.io/klog"
 	"kope.io/networking/pkg/routing"
 	"kope.io/networking/pkg/routing/netutil"
 )
@@ -68,7 +68,7 @@ func NewIpsecRoutingProvider(authenticationStrategy AuthenticationStrategy, encr
 
 	// TODO: Refactor into encapsulationStrategy
 	port := 4500
-	glog.Infof("Creating encap listener on port %d", port)
+	klog.Infof("Creating encap listener on port %d", port)
 	p.udpEncapListener, err = NewUDPEncapListener(port)
 	if err != nil {
 		return nil, fmt.Errorf("error creating UDP encapsulation listener on port %d: %v", port, err)
@@ -109,14 +109,14 @@ func doModprobe() error {
 		//"tunnel",
 	}
 	for _, module := range modules {
-		glog.Infof("Doing modprobe for module %v", module)
+		klog.Infof("Doing modprobe for module %v", module)
 		out, err := exec.Command("/sbin/modprobe", module).CombinedOutput()
 		outString := string(out)
 		if err != nil {
 			return fmt.Errorf("modprobe for module %q failed (%v): %s", module, err, outString)
 		}
 		if outString != "" {
-			glog.Infof("Output from modprobe %s:\n%s", module, outString)
+			klog.Infof("Output from modprobe %s:\n%s", module, outString)
 		}
 	}
 	return nil
@@ -158,11 +158,11 @@ func (p *IpsecRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 			}
 
 			if remote.Address == nil {
-				glog.Infof("Node %q did not have address; ignoring", remote.Name)
+				klog.Infof("Node %q did not have address; ignoring", remote.Name)
 				continue
 			}
 			if remote.PodCIDR == nil {
-				glog.Infof("Node %q did not have PodCIDR; ignoring", remote.Name)
+				klog.Infof("Node %q did not have PodCIDR; ignoring", remote.Name)
 				continue
 			}
 
@@ -173,7 +173,7 @@ func (p *IpsecRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 
 			// dir isn't explicit in state rules, but we use it to avoid code duplication
 			for _, dir := range []netlink.Dir{netlink.XFRM_DIR_IN, netlink.XFRM_DIR_OUT} {
-				glog.Errorf("Using hard-coded (and stupid) encryption keys - NO SECURITY ")
+				klog.Errorf("Using hard-coded (and stupid) encryption keys - NO SECURITY ")
 
 				if p.authenticationStrategy.UseAH() {
 					// AH outbound
@@ -289,11 +289,11 @@ func (p *IpsecRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 			}
 
 			if remote.Address == nil {
-				glog.Infof("Node %q did not have address; ignoring", remote.Name)
+				klog.Infof("Node %q did not have address; ignoring", remote.Name)
 				continue
 			}
 			if remote.PodCIDR == nil {
-				glog.Infof("Node %q did not have PodCIDR; ignoring", remote.Name)
+				klog.Infof("Node %q did not have PodCIDR; ignoring", remote.Name)
 				continue
 			}
 
@@ -430,6 +430,6 @@ func computeNodeNumeral(podCIDR *net.IPNet) (uint32, error) {
 	// TODO: We have all the nodes; detect if we go over
 	v = v & 0x3fff
 
-	glog.Infof("Mapped CIDR %q -> %d", podCIDR, v)
+	klog.Infof("Mapped CIDR %q -> %d", podCIDR, v)
 	return v, nil
 }

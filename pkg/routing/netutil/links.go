@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/golang/glog"
 	"github.com/vishvananda/netlink"
+	"k8s.io/klog"
 	"kope.io/networking/pkg/util"
 )
 
@@ -15,7 +15,7 @@ type Links struct {
 // Creates links to match expected; removing any links that match prefix but are not expected
 // Returns the state of links matching expected
 func (t *Links) Ensure(expected []netlink.Link, prefix string) (map[string]netlink.Link, error) {
-	glog.V(2).Infof("NETLINK: ip links show")
+	klog.V(2).Infof("NETLINK: ip links show")
 
 	retMap := make(map[string]netlink.Link)
 
@@ -31,14 +31,14 @@ func (t *Links) Ensure(expected []netlink.Link, prefix string) (map[string]netli
 				continue
 			}
 			actualMap[name] = l
-			glog.V(4).Infof("Actual Link: %v", util.AsJsonString(l))
+			klog.V(4).Infof("Actual Link: %v", util.AsJsonString(l))
 		}
 	}
 
 	expectedMap := make(map[string]netlink.Link)
 
 	for _, e := range expected {
-		glog.V(4).Infof("Expected route: %v", util.AsJsonString(e))
+		klog.V(4).Infof("Expected route: %v", util.AsJsonString(e))
 
 		name := e.Attrs().Name
 		expectedMap[name] = e
@@ -56,7 +56,7 @@ func (t *Links) Ensure(expected []netlink.Link, prefix string) (map[string]netli
 		}
 
 		if !linkEqual(a, e) {
-			glog.Warningf("NOT IMPLEMENTED change for link %s:\n\ta: %s\n\te: %s", k, util.AsJsonString(a), util.AsJsonString(e))
+			klog.Warningf("NOT IMPLEMENTED change for link %s:\n\ta: %s\n\te: %s", k, util.AsJsonString(a), util.AsJsonString(e))
 			//remove = append(remove, a)
 			//create = append(create, e)
 		}
@@ -74,7 +74,7 @@ func (t *Links) Ensure(expected []netlink.Link, prefix string) (map[string]netli
 
 	if len(remove) != 0 {
 		for _, l := range remove {
-			glog.Infof("NETLINK: ip link del %s", l.Attrs().Name)
+			klog.Infof("NETLINK: ip link del %s", l.Attrs().Name)
 			err := netlink.LinkDel(l)
 			if err != nil {
 				return nil, fmt.Errorf("error removing link: %v", err)
@@ -84,8 +84,8 @@ func (t *Links) Ensure(expected []netlink.Link, prefix string) (map[string]netli
 
 	if len(create) != 0 {
 		for _, l := range create {
-			glog.Infof("NETLINK: ip link create %s", l.Attrs().Name)
-			glog.V(2).Infof(" full link object: %v", util.AsJsonString(l))
+			klog.Infof("NETLINK: ip link create %s", l.Attrs().Name)
+			klog.V(2).Infof(" full link object: %v", util.AsJsonString(l))
 			err := netlink.LinkAdd(l)
 			if err != nil {
 				return nil, fmt.Errorf("error creating link %v: %v", l, err)
@@ -111,7 +111,7 @@ func linkEqual(a, e netlink.Link) bool {
 	//case "gre":
 	//	return greLinkEqual(a.(*netlink.Gre), e.(*netlink.Gre))
 	default:
-		glog.Warningf("Unhandled type %q", a.Type())
+		klog.Warningf("Unhandled type %q", a.Type())
 		return true
 	}
 }

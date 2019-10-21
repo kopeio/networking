@@ -6,8 +6,8 @@ import (
 	"net"
 	"syscall"
 
-	"github.com/golang/glog"
 	"github.com/vishvananda/netlink"
+	"k8s.io/klog"
 	"kope.io/networking/pkg/routing"
 	"kope.io/networking/pkg/routing/netutil"
 )
@@ -42,7 +42,7 @@ func NewVxlanRoutingProvider(overlayCIDR *net.IPNet, deviceName string) (*VxlanR
 	}
 
 	mtu := underlyingLink.Attrs().MTU - 100
-	glog.Warningf("MTU hard-coded to underlying interface %s MTU - 100 = %d", deviceName, mtu)
+	klog.Warningf("MTU hard-coded to underlying interface %s MTU - 100 = %d", deviceName, mtu)
 
 	p := &VxlanRoutingProvider{
 		overlayCIDR: overlayCIDR,
@@ -91,9 +91,9 @@ func (p *VxlanRoutingProvider) EnsureLink(me net.IP, cidr *net.IPNet) (netlink.L
 	err := netlink.LinkAdd(link)
 	if err != nil {
 		// TODO: Reconfigure link?
-		glog.Warningf("Unable to create link; will reuse existing link: %v", err)
+		klog.Warningf("Unable to create link; will reuse existing link: %v", err)
 	} else {
-		glog.V(2).Infof("NETLINK: ip link set %s address %s", link.Name, macAddress)
+		klog.V(2).Infof("NETLINK: ip link set %s address %s", link.Name, macAddress)
 		err = netlink.LinkSetHardwareAddr(link, macAddress)
 		if err != nil {
 			return nil, fmt.Errorf("failed to `ip link set %s address %s`: %v", link.Name, macAddress, err)
@@ -107,7 +107,7 @@ func (p *VxlanRoutingProvider) EnsureLink(me net.IP, cidr *net.IPNet) (netlink.L
 	}
 
 	if found.Attrs().MTU != p.mtu {
-		glog.V(2).Infof("NETLINK: ip link set %s mtu %d", link.Name, p.mtu)
+		klog.V(2).Infof("NETLINK: ip link set %s mtu %d", link.Name, p.mtu)
 		err = netlink.LinkSetMTU(link, p.mtu)
 		if err != nil {
 			return nil, fmt.Errorf("failed to `ip link set %s mtu %d`: %v", link.Name, p.mtu, err)
@@ -131,7 +131,7 @@ func (p *VxlanRoutingProvider) EnsureLink(me net.IP, cidr *net.IPNet) (netlink.L
 	}
 
 	// ip link set $link up
-	glog.V(2).Infof("NETLINK: ip link set %s up", link.Name)
+	klog.V(2).Infof("NETLINK: ip link set %s up", link.Name)
 	err = netlink.LinkSetUp(link)
 	if err != nil {
 		return nil, fmt.Errorf("failed to `ip link set %s up`: %s", link.Name, err)
@@ -213,11 +213,11 @@ func (p *VxlanRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 		}
 
 		if remote.Address == nil {
-			glog.Infof("Node %q did not have address; ignoring", remote.Name)
+			klog.Infof("Node %q did not have address; ignoring", remote.Name)
 			continue
 		}
 		if remote.PodCIDR == nil {
-			glog.Infof("Node %q did not have PodCIDR; ignoring", remote.Name)
+			klog.Infof("Node %q did not have PodCIDR; ignoring", remote.Name)
 			continue
 		}
 
@@ -262,7 +262,7 @@ func mapToMAC(ip net.IP) net.HardwareAddr {
 	hw[1] = 0x53
 	ip4 := ip.To4()
 	if ip4 == nil {
-		glog.Fatalf("unexpected non-ipv4 IP: %v", ip)
+		klog.Fatalf("unexpected non-ipv4 IP: %v", ip)
 	}
 	hw[2] = ip4[0]
 	hw[3] = ip4[1]
@@ -270,6 +270,6 @@ func mapToMAC(ip net.IP) net.HardwareAddr {
 	hw[5] = ip4[3]
 
 	mac := net.HardwareAddr(hw)
-	glog.V(4).Infof("mapped ip %s -> mac %s", ip, mac)
+	klog.V(4).Infof("mapped ip %s -> mac %s", ip, mac)
 	return mac
 }

@@ -6,9 +6,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netlink/nl"
+	"k8s.io/klog"
 )
 
 type NetlinkMonitor struct {
@@ -39,7 +39,7 @@ func (m *NetlinkMonitor) watch() {
 	for {
 		messages, err := m.socket.Receive()
 		if err != nil {
-			glog.Errorf("error reading from netlink monitor: %v ", err)
+			klog.Errorf("error reading from netlink monitor: %v ", err)
 			time.Sleep(1 * time.Second)
 			continue
 		}
@@ -47,7 +47,7 @@ func (m *NetlinkMonitor) watch() {
 		for _, message := range messages {
 			neigh, err := netlink.NeighDeserialize(message.Data)
 			if err != nil {
-				glog.Warningf("error deserializing netlink monitor message: %v", err)
+				klog.Warningf("error deserializing netlink monitor message: %v", err)
 				continue
 			}
 
@@ -73,40 +73,40 @@ func (m *NetlinkMonitor) watch() {
 				continue
 			}
 
-			//glog.Infof("Got netlink monitor message: %v", neigh)
-			//glog.Infof("\tLinkIndex: %v", neigh.LinkIndex)
-			//glog.Infof("\tIP: %v", neigh.IP)
-			//glog.Infof("\tHardwareAddr: %v", neigh.HardwareAddr)
+			//klog.Infof("Got netlink monitor message: %v", neigh)
+			//klog.Infof("\tLinkIndex: %v", neigh.LinkIndex)
+			//klog.Infof("\tIP: %v", neigh.IP)
+			//klog.Infof("\tHardwareAddr: %v", neigh.HardwareAddr)
 			//
-			//glog.Infof("\tState: %v", neigh.State)
+			//klog.Infof("\tState: %v", neigh.State)
 			//if (neigh.State & netlink.NUD_INCOMPLETE) != 0 {
-			//	glog.Infof("\t\t NUD_INCOMPLETE")
+			//	klog.Infof("\t\t NUD_INCOMPLETE")
 			//}
 			//if (neigh.State & netlink.NUD_REACHABLE) != 0 {
-			//	glog.Infof("\t\t NUD_REACHABLE")
+			//	klog.Infof("\t\t NUD_REACHABLE")
 			//}
 			//if (neigh.State & netlink.NUD_STALE) != 0 {
-			//	glog.Infof("\t\t NUD_STALE")
+			//	klog.Infof("\t\t NUD_STALE")
 			//}
 			//if (neigh.State & netlink.NUD_DELAY) != 0 {
-			//	glog.Infof("\t\t NUD_DELAY")
+			//	klog.Infof("\t\t NUD_DELAY")
 			//}
 			//if (neigh.State & netlink.NUD_PROBE) != 0 {
-			//	glog.Infof("\t\t NUD_PROBE")
+			//	klog.Infof("\t\t NUD_PROBE")
 			//}
 			//if (neigh.State & netlink.NUD_FAILED) != 0 {
-			//	glog.Infof("\t\t NUD_FAILED")
+			//	klog.Infof("\t\t NUD_FAILED")
 			//}
 			//if (neigh.State & netlink.NUD_NOARP) != 0 {
-			//	glog.Infof("\t\t NUD_NOARP")
+			//	klog.Infof("\t\t NUD_NOARP")
 			//}
 			//if (neigh.State & netlink.NUD_PERMANENT) != 0 {
-			//	glog.Infof("\t\t NUD_PERMANENT")
+			//	klog.Infof("\t\t NUD_PERMANENT")
 			//}
 
 			ip4 := neigh.IP.To4()
 			if ip4 == nil {
-				glog.Warningf("ignoring ipv6 request: %s", neigh.IP)
+				klog.Warningf("ignoring ipv6 request: %s", neigh.IP)
 				continue
 			}
 
@@ -115,7 +115,7 @@ func (m *NetlinkMonitor) watch() {
 			mac := mapToMAC(cidrIP)
 
 			// We inject directly for speed (i.e. we don't do a full sync)
-			glog.V(2).Infof("NETLINK: ip neigh replace %s lladdr %s dev vxlanX", ip4, mac)
+			klog.V(2).Infof("NETLINK: ip neigh replace %s lladdr %s dev vxlanX", ip4, mac)
 			err = netlink.NeighSet(&netlink.Neigh{
 				LinkIndex:    m.linkIndex,
 				State:        netlink.NUD_REACHABLE,
@@ -124,7 +124,7 @@ func (m *NetlinkMonitor) watch() {
 				HardwareAddr: mac,
 			})
 			if err != nil {
-				glog.Warningf("error doing `ip neigh replace %s lladdr %s dev vxlanX`: %v", ip4, mac, err)
+				klog.Warningf("error doing `ip neigh replace %s lladdr %s dev vxlanX`: %v", ip4, mac, err)
 			}
 		}
 	}

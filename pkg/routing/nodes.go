@@ -6,8 +6,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/golang/glog"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/klog"
 	"kope.io/networking/pkg/util"
 )
 
@@ -103,14 +103,14 @@ func (m *NodeMap) updateNode(src *v1.Node) bool {
 
 	if m.me == nil {
 		if m.mePredicate(src) {
-			glog.Infof("identified self node: %q", src.Name)
+			klog.Infof("identified self node: %q", src.Name)
 			m.me = node
 			changed = true
 		}
 	}
 
 	if changed {
-		glog.V(2).Infof("Node %q changed", name)
+		klog.V(2).Infof("Node %q changed", name)
 		m.version++
 	}
 
@@ -168,7 +168,7 @@ func (n *NodeInfo) update(src *v1.Node) bool {
 
 	cidr := src.Spec.PodCIDR
 	if cidr == "" {
-		glog.Infof("Node has no CIDR: %q", name)
+		klog.Infof("Node has no CIDR: %q", name)
 		if n.PodCIDR != nil {
 			changed = true
 			n.PodCIDR = nil
@@ -176,7 +176,7 @@ func (n *NodeInfo) update(src *v1.Node) bool {
 	} else {
 		_, ipnet, err := net.ParseCIDR(cidr)
 		if err != nil || ipnet == nil {
-			glog.Warningf("Error parsing CIDR %q for node %q", cidr, name)
+			klog.Warningf("Error parsing CIDR %q for node %q", cidr, name)
 			if n.PodCIDR != nil {
 				changed = true
 				n.PodCIDR = nil
@@ -204,14 +204,14 @@ func (n *NodeInfo) update(src *v1.Node) bool {
 		}
 	} else {
 		if len(internalIPs) != 1 {
-			glog.Infof("arbitrarily choosing IP for node: %q", name)
+			klog.Infof("arbitrarily choosing IP for node: %q", name)
 			sort.Strings(internalIPs) // At least choose consistently
 		}
 
 		internalIP := internalIPs[0]
 		a := net.ParseIP(internalIP)
 		if a == nil {
-			glog.Warningf("Unable to parse node address %q", internalIP)
+			klog.Warningf("Unable to parse node address %q", internalIP)
 			if n.Address != nil {
 				n.Address = nil
 				changed = true
@@ -234,9 +234,9 @@ func (n *NodeInfo) update(src *v1.Node) bool {
 					// It is true that it is unavailable => available=false
 					networkAvailable = false
 				case v1.ConditionUnknown:
-					glog.V(2).Infof("NodeNetworkAvailable status was ConditionUnknown - assuming available")
+					klog.V(2).Infof("NodeNetworkAvailable status was ConditionUnknown - assuming available")
 				default:
-					glog.Warningf("NodeNetworkAvailable status was %q - assuming available")
+					klog.Warningf("NodeNetworkAvailable status was %q - assuming available")
 				}
 			}
 		}

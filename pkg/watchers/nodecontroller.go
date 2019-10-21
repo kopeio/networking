@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/glog"
 	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/klog"
 	"kope.io/networking/pkg/routing"
 	"kope.io/networking/pkg/util"
 )
@@ -32,13 +32,13 @@ func NewNodeController(kubeClient kubernetes.Interface, nodeMap *routing.NodeMap
 
 // Run starts the NodeController.
 func (c *NodeController) Run() {
-	glog.Infof("starting node controller")
+	klog.Infof("starting node controller")
 
 	stopCh := c.StopChannel()
 	go c.runWatcher(stopCh)
 
 	<-stopCh
-	glog.Infof("shutting down node controller")
+	klog.Infof("shutting down node controller")
 }
 
 func (c *NodeController) runWatcher(stopCh <-chan struct{}) {
@@ -61,7 +61,7 @@ func (c *NodeController) runWatcher(stopCh <-chan struct{}) {
 
 		listOpts.Watch = true
 		listOpts.ResourceVersion = nodeList.ResourceVersion
-		glog.Infof("doing node watch from %s", listOpts.ResourceVersion)
+		klog.Infof("doing node watch from %s", listOpts.ResourceVersion)
 		watcher, err := c.kubeClient.CoreV1().Nodes().Watch(listOpts)
 		if err != nil {
 			return false, fmt.Errorf("error watching nodes: %v", err)
@@ -70,16 +70,16 @@ func (c *NodeController) runWatcher(stopCh <-chan struct{}) {
 		for {
 			select {
 			case <-stopCh:
-				glog.Infof("Got stop signal")
+				klog.Infof("Got stop signal")
 				return true, nil
 			case event, ok := <-ch:
 				if !ok {
-					glog.Infof("node watch channel closed")
+					klog.Infof("node watch channel closed")
 					return false, nil
 				}
 
 				node := event.Object.(*v1.Node)
-				glog.V(4).Infof("node changed: %s %v", event.Type, node.Name)
+				klog.V(4).Infof("node changed: %s %v", event.Type, node.Name)
 
 				switch event.Type {
 				case watch.Added, watch.Modified:
@@ -89,7 +89,7 @@ func (c *NodeController) runWatcher(stopCh <-chan struct{}) {
 					c.nodeMap.RemoveNode(node)
 
 				default:
-					glog.Fatalf("unexpected type of watch event: %v", event)
+					klog.Fatalf("unexpected type of watch event: %v", event)
 				}
 			}
 		}
@@ -102,7 +102,7 @@ func (c *NodeController) runWatcher(stopCh <-chan struct{}) {
 		}
 
 		if err != nil {
-			glog.Warningf("Unexpected error in node watch, will retry: %v", err)
+			klog.Warningf("Unexpected error in node watch, will retry: %v", err)
 			time.Sleep(10 * time.Second)
 		}
 	}
