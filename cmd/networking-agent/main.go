@@ -30,10 +30,11 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/spf13/pflag"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"kope.io/networking"
+	"kope.io/networking/pkg/cni"
 	"kope.io/networking/pkg/routing"
 	"kope.io/networking/pkg/routing/gre"
 	"kope.io/networking/pkg/routing/ipsec"
@@ -242,13 +243,18 @@ func main() {
 	//	glog.Fatalf("%v", err)
 	//}
 
+	var cniWriter cni.ConfigWriter
+	if options.CNIConfigPath != "" {
+		cniWriter = &cni.SimpleConfigWriter{Path: options.CNIConfigPath}
+	}
+
 	c, err := watchers.NewNodeController(kubeClient, nodeMap)
 	if err != nil {
 		glog.Fatalf("Failed to build node controller: %v", err)
 	}
 	go c.Run()
 
-	rc, err := routing.NewController(kubeClient, nodeMap, provider)
+	rc, err := routing.NewController(kubeClient, nodeMap, provider, cniWriter)
 	if err != nil {
 		glog.Fatalf("Failed to build routing controller: %v", err)
 	}
