@@ -236,7 +236,7 @@ func (n *NodeInfo) update(src *v1.Node) bool {
 				case v1.ConditionUnknown:
 					klog.V(2).Infof("NodeNetworkAvailable status was ConditionUnknown - assuming available")
 				default:
-					klog.Warningf("NodeNetworkAvailable status was %q - assuming available")
+					klog.Warningf("NodeNetworkAvailable status was %q - assuming available", condition.Status)
 				}
 			}
 		}
