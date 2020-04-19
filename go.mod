@@ -1,5 +1,7 @@
 module kope.io/networking
 
+go 1.13
+
 // Lock some versions to kubernetes 1.16.2, as required by controller-runtime
 // replace X => X kubernetes-1.16.1
 replace k8s.io/api => k8s.io/api v0.0.0-20191016110408-35e52d86657a
@@ -11,7 +13,6 @@ replace k8s.io/client-go => k8s.io/client-go v0.0.0-20191016111102-bec269661e48
 require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/googleapis/gnostic v0.1.0 // indirect
-	github.com/gregjones/httpcache v0.0.0-20170926212834-c1f8028e62ad // indirect
 	github.com/vishvananda/netlink v1.0.0
 	github.com/vishvananda/netns v0.0.0-20171111001504-be1fbeda1936 // indirect
 	k8s.io/api v0.0.0-20191016110408-35e52d86657a
