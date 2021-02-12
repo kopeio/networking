@@ -37,7 +37,7 @@ func (m *NetlinkMonitor) Start() error {
 
 func (m *NetlinkMonitor) watch() {
 	for {
-		messages, err := m.socket.Receive()
+		messages, _, err := m.socket.Receive()
 		if err != nil {
 			klog.Errorf("error reading from netlink monitor: %v ", err)
 			time.Sleep(1 * time.Second)
