@@ -8,7 +8,7 @@ import (
 	"syscall"
 
 	"github.com/vishvananda/netlink"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	"kope.io/networking/pkg/routing"
 	"kope.io/networking/pkg/routing/netutil"
 )

@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // SimpleConfigWriter writes to a single cni config file

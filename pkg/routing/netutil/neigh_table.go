@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/vishvananda/netlink"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	"kope.io/networking/pkg/util"
 )
 

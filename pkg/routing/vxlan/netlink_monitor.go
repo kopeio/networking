@@ -8,7 +8,7 @@ import (
 
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netlink/nl"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 type NetlinkMonitor struct {
