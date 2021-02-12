@@ -3,7 +3,6 @@ package routing
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -95,17 +94,14 @@ func (c *Controller) runWatcher(ctx context.Context) {
 
 // SetNodeCondition updates specific node condition with patch operation.
 func setNodeCondition(ctx context.Context, c kubernetes.Interface, node string, condition v1.NodeCondition) error {
-	generatePatch := func(condition v1.NodeCondition) ([]byte, error) {
-		raw, err := json.Marshal(&[]v1.NodeCondition{condition})
-		if err != nil {
-			return nil, err
-		}
-		return []byte(fmt.Sprintf(`{"status":{"conditions":%s}}`, raw)), nil
-	}
-	condition.LastHeartbeatTime = metav1.Now()
-	patch, err := generatePatch(condition)
+	condition.LastHeartbeatTime = metav1.NewTime(time.Now())
+	patch, err := json.Marshal(map[string]interface{}{
+		"status": map[string]interface{}{
+			"conditions": []v1.NodeCondition{condition},
+		},
+	})
 	if err != nil {
-		return nil
+		return err
 	}
 	_, err = c.CoreV1().Nodes().PatchStatus(ctx, string(node), patch)
 	return err
