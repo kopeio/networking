@@ -24,7 +24,7 @@ rebuilddeps:
 	bazel run //:gazelle -- --proto=disable
 
 gazelle:
-	bazel run //:gazelle -- --proto=disable
+	bazel run //:gazelle -- fix --proto=disable
 
 bounce:
 	kubectl delete pod -n kube-system -l name=kopeio-networking-agent
