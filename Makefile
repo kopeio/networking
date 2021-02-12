@@ -17,7 +17,7 @@ goimports:
 push:
 	bazel run //images:push-networking-agent
 
-rebuilddeps:
+deps:
 	go mod vendor
 	find vendor/ -name "BUILD" -delete
 	find vendor/ -name "BUILD.bazel" -delete
