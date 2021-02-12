@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -48,6 +49,8 @@ import (
 //)
 
 func main() {
+	ctx := context.Background()
+
 	gitVersion := networking.GitVersion
 	if gitVersion != "" {
 		if len(gitVersion) > 6 {
@@ -246,13 +249,13 @@ func main() {
 	if err != nil {
 		klog.Fatalf("Failed to build node controller: %v", err)
 	}
-	go c.Run()
+	go c.Run(ctx)
 
 	rc, err := routing.NewController(kubeClient, nodeMap, provider, cniWriter)
 	if err != nil {
 		klog.Fatalf("Failed to build routing controller: %v", err)
 	}
-	go rc.Run()
+	go rc.Run(ctx)
 	//go registerHandlers(c)
 	go handleSigterm(c)
 

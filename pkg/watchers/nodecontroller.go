@@ -1,6 +1,7 @@
 package watchers
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -31,17 +32,17 @@ func NewNodeController(kubeClient kubernetes.Interface, nodeMap *routing.NodeMap
 }
 
 // Run starts the NodeController.
-func (c *NodeController) Run() {
+func (c *NodeController) Run(ctx context.Context) {
 	klog.Infof("starting node controller")
 
 	stopCh := c.StopChannel()
-	go c.runWatcher(stopCh)
+	go c.runWatcher(ctx, stopCh)
 
 	<-stopCh
 	klog.Infof("shutting down node controller")
 }
 
-func (c *NodeController) runWatcher(stopCh <-chan struct{}) {
+func (c *NodeController) runWatcher(ctx context.Context, stopCh <-chan struct{}) {
 	runOnce := func() (bool, error) {
 		var listOpts meta_v1.ListOptions
 
@@ -49,7 +50,7 @@ func (c *NodeController) runWatcher(stopCh <-chan struct{}) {
 		//listOpts.LabelSelector = labels.Everything()
 		//listOpts.FieldSelector = fields.Everything()
 
-		nodeList, err := c.kubeClient.CoreV1().Nodes().List(listOpts)
+		nodeList, err := c.kubeClient.CoreV1().Nodes().List(ctx, listOpts)
 		if err != nil {
 			return false, fmt.Errorf("error listing nodes: %v", err)
 		}
@@ -62,7 +63,7 @@ func (c *NodeController) runWatcher(stopCh <-chan struct{}) {
 		listOpts.Watch = true
 		listOpts.ResourceVersion = nodeList.ResourceVersion
 		klog.Infof("doing node watch from %s", listOpts.ResourceVersion)
-		watcher, err := c.kubeClient.CoreV1().Nodes().Watch(listOpts)
+		watcher, err := c.kubeClient.CoreV1().Nodes().Watch(ctx, listOpts)
 		if err != nil {
 			return false, fmt.Errorf("error watching nodes: %v", err)
 		}

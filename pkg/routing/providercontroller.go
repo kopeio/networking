@@ -1,6 +1,7 @@
 package routing
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -34,13 +35,13 @@ func NewController(kubeClient kubernetes.Interface, nodeMap *NodeMap, provider P
 }
 
 // Run starts the NodeController.
-func (c *Controller) Run() {
+func (c *Controller) Run(ctx context.Context) {
 	klog.Infof("starting node controller")
 
-	go c.runWatcher()
+	go c.runWatcher(ctx)
 }
 
-func (c *Controller) runWatcher() {
+func (c *Controller) runWatcher(ctx context.Context) {
 	for {
 		if c.nodeMap.IsReady() {
 			break
@@ -71,7 +72,7 @@ func (c *Controller) runWatcher() {
 			nodeName := c.nodeMap.me.Name
 			klog.Infof("marking node %q as network-ready in node status", nodeName)
 			currentTime := metav1.Now()
-			err = setNodeCondition(c.kubeClient, nodeName, v1.NodeCondition{
+			err = setNodeCondition(ctx, c.kubeClient, nodeName, v1.NodeCondition{
 				Type:               v1.NodeNetworkUnavailable,
 				Status:             v1.ConditionFalse,
 				Reason:             "RouteCreated",
@@ -93,7 +94,7 @@ func (c *Controller) runWatcher() {
 // Borrowed from k8s.io/kubernetes/pkg/util/node/node.go
 
 // SetNodeCondition updates specific node condition with patch operation.
-func setNodeCondition(c kubernetes.Interface, node string, condition v1.NodeCondition) error {
+func setNodeCondition(ctx context.Context, c kubernetes.Interface, node string, condition v1.NodeCondition) error {
 	generatePatch := func(condition v1.NodeCondition) ([]byte, error) {
 		raw, err := json.Marshal(&[]v1.NodeCondition{condition})
 		if err != nil {
@@ -106,6 +107,6 @@ func setNodeCondition(c kubernetes.Interface, node string, condition v1.NodeCond
 	if err != nil {
 		return nil
 	}
-	_, err = c.CoreV1().Nodes().PatchStatus(string(node), patch)
+	_, err = c.CoreV1().Nodes().PatchStatus(ctx, string(node), patch)
 	return err
 }
