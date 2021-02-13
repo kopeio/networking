@@ -51,6 +51,13 @@ import (
 func main() {
 	ctx := context.Background()
 
+	if err := run(ctx); err != nil {
+		klog.Fatalf("unexpected error: %v", err)
+		os.Exit(1)
+	}
+}
+
+func run(ctx context.Context) error {
 	gitVersion := networking.GitVersion
 	if gitVersion != "" {
 		if len(gitVersion) > 6 {
@@ -66,7 +73,7 @@ func main() {
 
 	err := options.LoadFrom("/config/config.yaml")
 	if err != nil && !os.IsNotExist(err) {
-		klog.Fatalf("error reading config file: %v", err)
+		return fmt.Errorf("error reading config file: %v", err)
 	}
 
 	flags := flag.NewFlagSet("", flag.ExitOnError)
@@ -82,13 +89,12 @@ func main() {
 
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		klog.Errorf("error building client configuration: %v", err)
-		os.Exit(1)
+		return fmt.Errorf("error building client configuration: %v", err)
 	}
 
 	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		klog.Fatalf("error building REST client: %v", err)
+		return fmt.Errorf("error building REST client: %v", err)
 	}
 
 	var matcher func(node *v1.Node) bool
@@ -103,7 +109,7 @@ func main() {
 
 		b, err := ioutil.ReadFile(options.MachineIDPath)
 		if err != nil {
-			klog.Fatalf("error reading machine-id file %q: %v", options.MachineIDPath, err)
+			return fmt.Errorf("error reading machine-id file %q: %v", options.MachineIDPath, err)
 		}
 		machineID := string(b)
 		machineID = strings.TrimSpace(machineID)
@@ -117,14 +123,14 @@ func main() {
 
 		b, err := ioutil.ReadFile(options.SystemUUIDPath)
 		if err != nil {
-			klog.Fatalf("error reading system-uuid file %q: %v", options.SystemUUIDPath, err)
+			return fmt.Errorf("error reading system-uuid file %q: %v", options.SystemUUIDPath, err)
 		}
 		systemUUID := string(b)
 		systemUUID = strings.TrimSpace(systemUUID)
 
 		// If the BIOS isn't correctly configured, we'll
 		if systemUUID == "03000200-0400-0500-0006-000700080009" {
-			klog.Fatalf("detected well-known invalid system-uuid 03000200-0400-0500-0006-000700080009")
+			return fmt.Errorf("detected well-known invalid system-uuid 03000200-0400-0500-0006-000700080009")
 		}
 
 		klog.Infof("will match node on systemUUID=%q", systemUUID)
@@ -136,7 +142,7 @@ func main() {
 
 		b, err := ioutil.ReadFile(options.BootIDPath)
 		if err != nil {
-			klog.Fatalf("error reading boot-id file %q: %v", options.BootIDPath, err)
+			return fmt.Errorf("error reading boot-id file %q: %v", options.BootIDPath, err)
 		}
 		bootID := string(b)
 		bootID = strings.TrimSpace(bootID)
@@ -152,7 +158,7 @@ func main() {
 		if matchNodeName == "" {
 			hostname, err := os.Hostname()
 			if err != nil {
-				klog.Fatalf("error getting hostname: %v", err)
+				return fmt.Errorf("error getting hostname: %v", err)
 			}
 			klog.Infof("Using hostname as node name: %q", hostname)
 			matchNodeName = hostname
@@ -169,7 +175,7 @@ func main() {
 	if targetLinkName == "" {
 		targetLinkName, err = findTargetLink()
 		if targetLinkName == "" || err != nil {
-			klog.Fatalf("unable to determine network device; pass --target to specify: %v", err)
+			return fmt.Errorf("unable to determine network device; pass --target to specify: %v", err)
 		}
 	}
 
@@ -196,7 +202,7 @@ func main() {
 		case "aes":
 			encryptionStrategy = &ipsec.AesEncryptionStrategy{}
 		default:
-			klog.Fatalf("unknown ipsec-encryption: %v", options.IPSEC.Encryption)
+			return fmt.Errorf("unknown ipsec-encryption: %v", options.IPSEC.Encryption)
 		}
 		switch options.IPSEC.Authentication {
 		case "none":
@@ -204,7 +210,7 @@ func main() {
 		case "sha1":
 			authenticationStrategy = &ipsec.HmacSha1AuthenticationStrategy{}
 		default:
-			klog.Fatalf("unknown ipsec-authentication: %v", options.IPSEC.Authentication)
+			return fmt.Errorf("unknown ipsec-authentication: %v", options.IPSEC.Authentication)
 		}
 		switch options.IPSEC.Encapsulation {
 		case "udp":
@@ -212,7 +218,7 @@ func main() {
 		case "esp":
 			encapsulationStrategy = &ipsec.EspEncapsulationStrategy{}
 		default:
-			klog.Fatalf("unknown ipsec-encapsulation: %v", options.IPSEC.Encapsulation)
+			return fmt.Errorf("unknown ipsec-encapsulation: %v", options.IPSEC.Encapsulation)
 		}
 
 		var ipsecProvider *ipsec.IpsecRoutingProvider
@@ -222,22 +228,22 @@ func main() {
 			klog.Warningf("TODO Doing ip xfrm flush; remove!!")
 			err := ipsecProvider.Flush()
 			if err != nil {
-				klog.Fatalf("cannot flush tables")
+				return fmt.Errorf("cannot flush tables")
 			}
 		}
 		provider = ipsecProvider
 
 	default:
-		klog.Fatalf("provider not known: %q", options.Provider)
+		return fmt.Errorf("provider not known: %q", options.Provider)
 	}
 
 	if err != nil {
-		klog.Fatalf("failed to build provider %q: %v", options.Provider, err)
+		return fmt.Errorf("failed to build provider %q: %v", options.Provider, err)
 	}
 
 	//c, err := newRouteController(kubeClient, *resyncPeriod, *nodeName, bootID, systemUUID, machineID, provider)
 	//if err != nil {
-	//	klog.Fatalf("%v", err)
+	//	return fmt.Errorf("%v", err)
 	//}
 
 	var cniWriter cni.ConfigWriter
@@ -247,13 +253,13 @@ func main() {
 
 	c, err := watchers.NewNodeController(kubeClient, nodeMap)
 	if err != nil {
-		klog.Fatalf("Failed to build node controller: %v", err)
+		return fmt.Errorf("Failed to build node controller: %v", err)
 	}
 	go c.Run(ctx)
 
 	rc, err := routing.NewController(kubeClient, nodeMap, provider, cniWriter)
 	if err != nil {
-		klog.Fatalf("Failed to build routing controller: %v", err)
+		return fmt.Errorf("Failed to build routing controller: %v", err)
 	}
 	go rc.Run(ctx)
 	//go registerHandlers(c)
@@ -262,7 +268,6 @@ func main() {
 	for {
 		time.Sleep(30 * time.Second)
 	}
-
 }
 
 //func registerHandlers(c *routeController) {
