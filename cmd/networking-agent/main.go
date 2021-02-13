@@ -32,7 +32,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	"kope.io/networking"
 	"kope.io/networking/pkg/cni"
 	"kope.io/networking/pkg/routing"
