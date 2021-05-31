@@ -1,0 +1,23 @@
+domain: kope.io
+layout:
+- declarative.go.kubebuilder.io/v1
+- go.kubebuilder.io/v3
+plugins:
+  declarative.go.kubebuilder.io/v1:
+    resources:
+    - domain: kope.io
+      group: addons
+      kind: Networking
+      version: v1alpha1
+projectName: operator
+repo: kope.io/networking/operator
+resources:
+- api:
+    crdVersion: v1
+  controller: true
+  domain: kope.io
+  group: addons
+  kind: Networking
+  path: kope.io/networking/operator/api/v1alpha1
+  version: v1alpha1
+version: "3"

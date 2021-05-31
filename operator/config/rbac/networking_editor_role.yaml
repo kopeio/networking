@@ -1,0 +1,24 @@
+# permissions for end users to edit networkings.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: networking-editor-role
+rules:
+- apiGroups:
+  - addons.kope.io
+  resources:
+  - networkings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - addons.kope.io
+  resources:
+  - networkings/status
+  verbs:
+  - get
