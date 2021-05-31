@@ -1,7 +1,5 @@
 apiVersion: addons.kope.io/v1alpha1
 kind: Networking
 metadata:
-  name: networking-sample
-spec:
-  # Add fields here
-  foo: bar
+  name: default
+spec: {}

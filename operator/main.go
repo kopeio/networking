@@ -23,13 +23,15 @@ import (
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/klog/v2"
+	"k8s.io/klog/v2/klogr"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/addon"
 
 	addonsv1alpha1 "kope.io/networking/operator/api/v1alpha1"
 	"kope.io/networking/operator/controllers"
@@ -48,6 +50,12 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
+// Explicit permissions for leader election
+//+kubebuilder:rbac:groups=coordination.k8s.io,namespace=kopeio-networking-system,resources=leases,verbs=get;list;watch;create;update;patch;delete
+
+// Explicit permissions for events
+//+kubebuilder:rbac:groups="",namespace=kopeio-networking-system,resources=events,verbs=create;patch
+
 func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
@@ -57,21 +65,21 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	opts := zap.Options{
-		Development: true,
-	}
-	opts.BindFlags(flag.CommandLine)
+	klog.InitFlags(nil)
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	ctrl.SetLogger(klogr.New())
+
+	addon.Init()
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
-		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "eaf2305a.kope.io",
+		Scheme:                     scheme,
+		MetricsBindAddress:         metricsAddr,
+		Port:                       9443,
+		HealthProbeBindAddress:     probeAddr,
+		LeaderElection:             enableLeaderElection,
+		LeaderElectionID:           "networking.addons.kope.io",
+		LeaderElectionResourceLock: "leases",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

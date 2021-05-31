@@ -1,0 +1,6 @@
+resources:
+- crd/bases/addons.kope.io_networkings.yaml
+- minimal/operator-permissions.yaml
+- minimal/target-permissions.yaml
+- minimal/deployment.yaml
+- rbac/role.yaml

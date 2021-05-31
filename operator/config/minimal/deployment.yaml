@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kopeio-networking-operator
+  namespace: kopeio-networking-system
+  labels:
+    k8s-addon: networking.addons.kope.io
+spec:
+  selector:
+    matchLabels:
+      k8s-app: kopeio-networking-operator
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        k8s-app: kopeio-networking-operator
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+      - command:
+        - /kopeio-networking-operator
+        args:
+        - --leader-elect
+        image: kopeio-networking-operator:latest
+        imagePullPolicy: Always
+        name: operator
+        securityContext:
+          allowPrivilegeEscalation: false
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 100m
+            memory: 30Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+      serviceAccountName: kopeio-networking-operator
+      terminationGracePeriodSeconds: 10

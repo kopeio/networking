@@ -2,9 +2,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: kopeio-networking-agent
-  namespace: kube-system
-  labels:
-    k8s-addon: networking.kope.io
+  namespace: kopeio-networking-system
 spec:
   selector:
     matchLabels:
@@ -51,55 +49,3 @@ spec:
         - name: lib-modules
           hostPath:
             path: /lib/modules
-
----
-
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: kopeio-networking-agent
-  namespace: kube-system
-  labels:
-    k8s-addon: networking.kope.io
-
----
-
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRole
-metadata:
-  labels:
-    k8s-addon: networking.kope.io
-  name: kopeio:networking-agent
-rules:
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
-  - patch
-- apiGroups:
-  - ""
-  resources:
-  - nodes/status
-  verbs:
-  - patch
-
----
-
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRoleBinding
-metadata:
-  labels:
-    k8s-addon: networking.kope.io
-  name: kopeio:networking-agent
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: kopeio:networking-agent
-subjects:
-- apiGroup: rbac.authorization.k8s.io
-  kind: User
-  name: system:serviceaccount:kube-system:kopeio-networking-agent

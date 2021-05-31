@@ -43,8 +43,10 @@ type NetworkingReconciler struct {
 	declarative.Reconciler
 }
 
-//+kubebuilder:rbac:groups=addons.kope.io,resources=networkings,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=addons.kope.io,resources=networkings,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups=addons.kope.io,resources=networkings/status,verbs=get;update;patch
+
+//+kubebuilder:rbac:namespace=kopeio-networking-system,groups=apps,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *NetworkingReconciler) SetupWithManager(mgr ctrl.Manager) error {
