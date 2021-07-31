@@ -208,6 +208,9 @@ func (p *VxlanRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 			Scope:     netlink.SCOPE_UNIVERSE,
 			Dst:       remote.PodCIDR,
 			Gw:        remote.PodCIDR.IP,
+			Protocol:  syscall.RTPROT_BOOT,
+			Table:     syscall.RT_TABLE_MAIN,
+			Type:      syscall.RTN_UNICAST,
 		}
 		route.SetFlag(syscall.RTNH_F_ONLINK)
 		routes = append(routes, route)
