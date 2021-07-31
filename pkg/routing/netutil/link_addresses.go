@@ -21,6 +21,10 @@ func EnsureLinkAddresses(link netlink.Link, expected []*netlink.Addr) error {
 			klog.Errorf("ignoring unexpected address entry with no IP: %v", a)
 			continue
 		}
+		if a.IP.IsLinkLocalUnicast() {
+			klog.Infof("ignoring link local address %v", a.IP)
+			continue
+		}
 		k := a.IPNet.String()
 		actualMap[k] = a
 		klog.V(2).Infof("Actual address entry: %s=%v", k, util.AsJsonString(a))

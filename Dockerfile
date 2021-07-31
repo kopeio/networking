@@ -8,7 +8,7 @@ COPY go.sum go.sum
 
 # Cache and prebuild some dependencies for faster builds.
 RUN go mod download
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v k8s.io/client-go/kubernetes
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v k8s.io/client-go/kubernetes github.com/vishvananda/netlink
 
 # Copy the go source
 COPY cmd/ cmd/
