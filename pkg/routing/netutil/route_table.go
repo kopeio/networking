@@ -55,7 +55,7 @@ func (t *RouteTable) Ensure(link netlink.Link, expected []*netlink.Route, delete
 		}
 
 		if !routeEqual(a, e) {
-			klog.V(2).Infof("change for %s:\n\ta: %s\n\te: %s", k, util.AsJsonString(a), util.AsJsonString(e))
+			klog.Infof("change for %s:\n\ta: %s\n\te: %s", k, util.AsJsonString(a), util.AsJsonString(e))
 			remove = append(remove, a)
 			create = append(create, e)
 		}
