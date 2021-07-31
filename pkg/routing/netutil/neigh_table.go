@@ -64,7 +64,7 @@ func (t *NeighTable) Ensure(link netlink.Link, expected []*netlink.Neigh) error 
 		}
 
 		if !neighEqual(a, e) {
-			klog.V(2).Infof("neigh change for %s:\n\t%s\n\t%s", k, util.AsJsonString(a), util.AsJsonString(e))
+			klog.Infof("neigh change for %s:\n\t%s\n\t%s", k, util.AsJsonString(a), util.AsJsonString(e))
 			upsert = append(upsert, e)
 		}
 	}

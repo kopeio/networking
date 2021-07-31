@@ -206,6 +206,7 @@ func (p *VxlanRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
 
 		arp := &netlink.Neigh{
 			LinkIndex:    linkIndex,
+			Family:       netlink.FAMILY_V4,
 			State:        netlink.NUD_PERMANENT,
 			Type:         syscall.RTN_UNICAST,
 			IP:           remote.PodCIDR.IP,
