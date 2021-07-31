@@ -19,9 +19,13 @@ COPY version.go version.go
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o kopeio-networking-agent ./cmd/networking-agent/
 
 # Use distroless as base image https://github.com/GoogleContainerTools/distroless
-FROM gcr.io/distroless/static:nonroot
+
+# Note: we can't use non-root; we need to do privileged network operations
+FROM gcr.io/distroless/static:latest
+#FROM gcr.io/distroless/static:nonroot
+#USER 65532:65532
+
 WORKDIR /
 COPY --from=builder /workspace/kopeio-networking-agent .
-USER 65532:65532
 
 ENTRYPOINT ["/kopeio-networking-agent"]
