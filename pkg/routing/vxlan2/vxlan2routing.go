@@ -1,6 +1,7 @@
 package vxlan2
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 	"syscall"
@@ -64,7 +65,7 @@ func (p *VxlanRoutingProvider) EnsureLink(me net.IP, cidr *net.IPNet) (netlink.L
 	macAddress := mapToMAC(cidr.IP)
 
 	// TODO: Check if exists first?
-	link := &netlink.Vxlan{
+	expected := &netlink.Vxlan{
 		LinkAttrs: netlink.LinkAttrs{
 			Name:         name,
 			MTU:          p.mtu,
@@ -77,29 +78,46 @@ func (p *VxlanRoutingProvider) EnsureLink(me net.IP, cidr *net.IPNet) (netlink.L
 		Port:         p.vxlanPort,
 	}
 
-	err := netlink.LinkAdd(link)
+	actual, err := netlink.LinkByName(name)
 	if err != nil {
-		// TODO: Reconfigure link?
-		klog.Warningf("Unable to create link; will reuse existing link: %v", err)
-	} else {
-		klog.V(2).Infof("NETLINK: ip link set %s address %s", link.Name, macAddress)
-		err = netlink.LinkSetHardwareAddr(link, macAddress)
-		if err != nil {
-			return nil, fmt.Errorf("failed to `ip link set %s address %s`: %v", link.Name, macAddress, err)
+		if _, ok := err.(netlink.LinkNotFoundError); ok {
+			klog.V(2).Infof("link %q not found: %v", name, err)
+			actual = nil
+		} else {
+			return nil, fmt.Errorf("error fetching link %q: %w", name, err)
 		}
 	}
 
-	// We need the link index
-	found, err := netlink.LinkByName(link.Name)
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving link %q: %v", link.Name, err)
+	if actual == nil {
+		if err := netlink.LinkAdd(expected); err != nil {
+			klog.Infof("failed to create link %#v", expected)
+			return nil, fmt.Errorf("unable to create link %q: %w", name, err)
+		}
+
+		// We need the link index
+		found, err := netlink.LinkByName(expected.Name)
+		if err != nil {
+			return nil, fmt.Errorf("error retrieving link %q after creation: %w", expected.Name, err)
+		}
+		actual = found
+	} else {
+		// TODO: Check for differences and reconfigure?
+		klog.V(2).Infof("existing link is %#v", actual)
+		klog.Infof("reusing existing link %q", name)
 	}
 
-	if found.Attrs().MTU != p.mtu {
-		klog.V(2).Infof("NETLINK: ip link set %s mtu %d", link.Name, p.mtu)
-		err = netlink.LinkSetMTU(link, p.mtu)
+	if !bytes.Equal(actual.Attrs().HardwareAddr, macAddress) {
+		klog.V(2).Infof("NETLINK: ip link set %s address %s", name, macAddress)
+		if err := netlink.LinkSetHardwareAddr(actual, macAddress); err != nil {
+			return nil, fmt.Errorf("failed to `ip link set %s address %s`: %w", name, macAddress, err)
+		}
+	}
+
+	if actual.Attrs().MTU != p.mtu {
+		klog.V(2).Infof("NETLINK: ip link set %s mtu %d", name, p.mtu)
+		err = netlink.LinkSetMTU(actual, p.mtu)
 		if err != nil {
-			return nil, fmt.Errorf("failed to `ip link set %s mtu %d`: %v", link.Name, p.mtu, err)
+			return nil, fmt.Errorf("failed to `ip link set %s mtu %d`: %w", name, p.mtu, err)
 		}
 	}
 
@@ -108,25 +126,26 @@ func (p *VxlanRoutingProvider) EnsureLink(me net.IP, cidr *net.IPNet) (netlink.L
 		IP:   cidr.IP,
 		Mask: net.CIDRMask(32, 32),
 	}
-	err = netutil.EnsureLinkAddresses(link, []*netlink.Addr{
+	err = netutil.EnsureLinkAddresses(actual, []*netlink.Addr{
 		{
 			IPNet: linkCIDR,
-			Label: link.Name,
+			Label: name,
 			Flags: 128, // ???
 		},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to `ip addr add %s dev link %s`: %v", cidr, link.Name, err)
+		return nil, fmt.Errorf("failed to set address %s on link %s`: %w", cidr, name, err)
 	}
 
 	// ip link set $link up
-	klog.V(2).Infof("NETLINK: ip link set %s up", link.Name)
-	err = netlink.LinkSetUp(link)
-	if err != nil {
-		return nil, fmt.Errorf("failed to `ip link set %s up`: %s", link.Name, err)
+	if actual.Attrs().Flags&net.FlagUp == 0 {
+		klog.V(2).Infof("NETLINK: ip link set %s up", name)
+		if err := netlink.LinkSetUp(actual); err != nil {
+			return nil, fmt.Errorf("failed to `ip link set %s up`: %w", name, err)
+		}
 	}
 
-	return found, nil
+	return actual, nil
 }
 
 func (p *VxlanRoutingProvider) EnsureCIDRs(nodeMap *routing.NodeMap) error {
