@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: operator
+  namespace: system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: operator
+  template:
+    metadata:
+      labels:
+        k8s-app: operator
+    spec:
+      containers:
+      - args:
+        - --leader-elect=false
+        - --rbac-mode=ignore
+        image: operator:latest
+        name: manager
+        resources:
+          limits:
+            memory: 30Mi
+          requests:
+            cpu: 10m
+            memory: 20Mi
+      serviceAccountName: operator
+      terminationGracePeriodSeconds: 10

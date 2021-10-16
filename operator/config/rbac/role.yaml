@@ -4,7 +4,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
-  name: kopeio-networking-operator
+  name: operator
 rules:
 - apiGroups:
   - addons.kope.io
@@ -30,7 +30,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   creationTimestamp: null
-  name: kopeio-networking-operator
+  name: operator
   namespace: kopeio-networking-system
 rules:
 - apiGroups:
@@ -46,12 +46,19 @@ rules:
   - daemonsets
   verbs:
   - create
-  - delete
   - get
   - list
+  - watch
+- apiGroups:
+  - apps
+  resourceNames:
+  - kopeio-networking-agent
+  resources:
+  - daemonsets
+  verbs:
+  - delete
   - patch
   - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:

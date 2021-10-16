@@ -17,6 +17,9 @@ limitations under the License.
 package controllers
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -28,6 +31,7 @@ import (
 	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/addon"
 	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/addon/pkg/status"
 	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/declarative"
+	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/declarative/pkg/manifest"
 
 	addonsv1alpha1 "kope.io/networking/operator/api/v1alpha1"
 )
@@ -40,13 +44,18 @@ type NetworkingReconciler struct {
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 
+	RBACMode string
+
 	declarative.Reconciler
 }
 
 //+kubebuilder:rbac:groups=addons.kope.io,resources=networkings,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups=addons.kope.io,resources=networkings/status,verbs=get;update;patch
 
-//+kubebuilder:rbac:namespace=kopeio-networking-system,groups=apps,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
+// Generated with: rbac-gen --yaml channels/packages/networking/1.0.20210815/manifest.yaml --format kubebuilder --supervisory --limit-namespaces --limit-resource-names
+
+//+kubebuilder:rbac:groups=apps,namespace=kopeio-networking-system,resources=daemonsets,verbs=create;get;list;watch
+//+kubebuilder:rbac:groups=apps,namespace=kopeio-networking-system,resources=daemonsets,resourceNames=kopeio-networking-agent,verbs=delete;patch;update
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *NetworkingReconciler) SetupWithManager(mgr ctrl.Manager) error {
@@ -56,9 +65,37 @@ func (r *NetworkingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		"k8s-app": "networking",
 	}
 
+	rbacModeTransform := func(ctx context.Context, object declarative.DeclarativeObject, objects *manifest.Objects) error {
+		switch r.RBACMode {
+		case "reconcile", "":
+			return nil
+
+		case "ignore":
+			var keepItems []*manifest.Object
+			for _, obj := range objects.Items {
+				keep := true
+				if obj.GroupKind().Group == "rbac.authorization.k8s.io" {
+					switch obj.GroupKind().Kind {
+					case "ClusterRole", "ClusterRoleBinding", "Role", "RoleBinding":
+						keep = false
+					}
+				}
+				if keep {
+					keepItems = append(keepItems, obj)
+				}
+			}
+			objects.Items = keepItems
+			return nil
+
+		default:
+			return fmt.Errorf("unknown rbac mode %q", r.RBACMode)
+		}
+	}
+
 	watchLabels := declarative.SourceLabel(mgr.GetScheme())
 
 	if err := r.Reconciler.Init(mgr, &addonsv1alpha1.Networking{},
+		declarative.WithObjectTransform(rbacModeTransform),
 		declarative.WithObjectTransform(declarative.AddLabels(labels)),
 		declarative.WithOwner(declarative.SourceAsOwner),
 		declarative.WithLabels(watchLabels),
@@ -82,7 +119,13 @@ func (r *NetworkingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	// Watch for changes to deployed objects
-	_, err = declarative.WatchAll(mgr.GetConfig(), c, r, watchLabels)
+	_, err = declarative.WatchChildren(declarative.WatchChildrenOptions{
+		Manager:                 mgr,
+		Controller:              c,
+		Reconciler:              r,
+		LabelMaker:              watchLabels,
+		ScopeWatchesToNamespace: true,
+	})
 	if err != nil {
 		return err
 	}
