@@ -1,0 +1,5 @@
+apiVersion: addons.kope.io/v1alpha1
+kind: Networking
+metadata:
+  name: default
+spec: {}
