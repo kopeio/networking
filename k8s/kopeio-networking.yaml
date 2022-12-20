@@ -1,20 +1,18 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: kopeio-networking-agent
   namespace: kube-system
   labels:
     k8s-addon: networking.kope.io
-    role.kubernetes.io/networking: "1"
 spec:
+  selector:
+    matchLabels:
+      name: kopeio-networking-agent
   template:
     metadata:
       labels:
         name: kopeio-networking-agent
-        role.kubernetes.io/networking: "1"
-      annotations:
-        scheduler.alpha.kubernetes.io/critical-pod: ''
-        scheduler.alpha.kubernetes.io/tolerations: '[{"key":"CriticalAddonsOnly", "operator":"Exists"}]'
     spec:
       hostPID: true
       hostIPC: true
@@ -28,7 +26,7 @@ spec:
               memory: 100Mi
           securityContext:
             privileged: true
-          image: kopeio/networking-agent:1.0.20181028
+          image: kopeio/networking-agent:latest
           name: networking-agent
           volumeMounts:
             - name: lib-modules
@@ -40,6 +38,7 @@ spec:
               fieldRef:
                 fieldPath: spec.nodeName
       serviceAccountName: kopeio-networking-agent
+      priorityClassName: system-node-critical
       tolerations:
       - effect: NoSchedule
         operator: Exists
@@ -59,11 +58,10 @@ metadata:
   namespace: kube-system
   labels:
     k8s-addon: networking.kope.io
-    role.kubernetes.io/networking: "1"
 
 ---
 
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
@@ -88,7 +86,7 @@ rules:
 
 ---
 
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
