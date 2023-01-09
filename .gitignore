@@ -2,10 +2,3 @@
 *.iml
 .idea/
 
-# Bazel
-bazel-bin
-bazel-genfiles
-bazel-networking
-bazel-out
-bazel-testlogs
-
