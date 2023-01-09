@@ -171,26 +171,36 @@ func run(ctx context.Context) error {
 
 	nodeMap := routing.NewNodeMap(matcher)
 
-	targetLinkName := options.TargetLinkName
-	if targetLinkName == "" {
-		targetLinkName, err = findTargetLink()
-		if targetLinkName == "" || err != nil {
-			return fmt.Errorf("unable to determine network device; pass --target to specify: %v", err)
+	var targetLinkNames []string
+	if options.TargetLinkName != "" {
+		targetLinkNames = append(targetLinkNames, options.TargetLinkName)
+	}
+	if len(targetLinkNames) == 0 {
+		links, err := findTargetLinks()
+		if len(links) == 0 || err != nil {
+			return fmt.Errorf("unable to determine network device; pass --target to specify: %w", err)
 		}
+		targetLinkNames = links
 	}
 
 	var provider routing.Provider
 	switch options.Provider {
 	case "layer2":
-		provider, err = layer2.NewLayer2RoutingProvider(targetLinkName)
+		if len(targetLinkNames) != 1 {
+			return fmt.Errorf("expected exactly one target link with layer2; got %v", targetLinkNames)
+		}
+		provider, err = layer2.NewLayer2RoutingProvider(targetLinkNames[0])
 	case "gre":
 		provider, err = gre.NewGreRoutingProvider()
 	case "vxlan-legacy":
+		if len(targetLinkNames) != 1 {
+			return fmt.Errorf("expected exactly one target link with layer2; got %v", targetLinkNames)
+		}
 		_, overlayCIDR, _ := net.ParseCIDR(options.PodCIDR)
-		provider, err = vxlan.NewVxlanRoutingProvider(overlayCIDR, targetLinkName)
+		provider, err = vxlan.NewVxlanRoutingProvider(overlayCIDR, targetLinkNames[0])
 	case "vxlan":
 		_, overlayCIDR, _ := net.ParseCIDR(options.PodCIDR)
-		provider, err = vxlan2.NewVxlanRoutingProvider(overlayCIDR, targetLinkName)
+		provider, err = vxlan2.NewVxlanRoutingProvider(overlayCIDR, targetLinkNames)
 	case "ipsec":
 		var authenticationStrategy ipsec.AuthenticationStrategy
 		var encryptionStrategy ipsec.EncryptionStrategy
@@ -312,14 +322,14 @@ func handleSigterm(c *watchers.NodeController) {
 	os.Exit(exitCode)
 }
 
-// findTargetLink attempts to discover the correct network interface
-func findTargetLink() (string, error) {
+// findTargetLinks attempts to discover the correct network interface(s)
+func findTargetLinks() ([]string, error) {
 	networkInterfaces, err := net.Interfaces()
 	if err != nil {
-		return "", fmt.Errorf("error querying interfaces to determine primary network interface: %v", err)
+		return nil, fmt.Errorf("error querying interfaces to determine primary network interface: %v", err)
 	}
 
-	var candidates []string
+	var candidates []*net.Interface
 	for i := range networkInterfaces {
 		networkInterface := &networkInterfaces[i]
 		flags := networkInterface.Flags
@@ -336,16 +346,25 @@ func findTargetLink() (string, error) {
 			continue
 		}
 
-		candidates = append(candidates, networkInterface.Name)
+		candidates = append(candidates, networkInterface)
 	}
 
 	if len(candidates) == 0 {
-		return "", fmt.Errorf("unable to determine interface (no interfaces found)")
+		return nil, fmt.Errorf("unable to determine interface (no interfaces found)")
 	}
 
-	if len(candidates) == 1 {
-		return candidates[0], nil
-	}
+	candidateNames := transform(candidates, func(i *net.Interface) string {
+		return i.Name
+	})
 
-	return "", fmt.Errorf("unable to determine interface (multiple interfaces found: %s)", strings.Join(candidates, ","))
+	return candidateNames, nil
+}
+
+func transform[T, V any](in []T, fn func(t T) V) []V {
+	out := make([]V, 0, len(in))
+	for _, t := range in {
+		v := fn(t)
+		out = append(out, v)
+	}
+	return out
 }
