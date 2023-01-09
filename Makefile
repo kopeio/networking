@@ -1,7 +1,7 @@
 .PHONY: images
 
-DOCKER_REGISTRY?=$(shell whoami)
-DOCKER_TAG?=latest
+IMAGE_REPO?=$(shell whoami)
+IMAGE_TAG?=latest
 
 IMG ?= ${DOCKER_REGISTRY}/networking-agent:${DOCKER_TAG}
 
@@ -15,13 +15,8 @@ gofmt:
 goimports:
 	goimports -w cmd/ pkg/
 
-.PHONY: docker-build
-docker-build:
-	docker buildx build -t ${IMG} --load .
-
-.PHONY: docker-push
-docker-push: docker-build
-	docker push ${IMG}
+push:
+	KO_DOCKER_REPO=${IMAGE_REPO} go run github.com/google/ko@v0.12.0 build -B --tags=${IMAGE_TAG} ./cmd/networking-agent
 
 bounce:
 	kubectl delete pod -n kube-system -l name=kopeio-networking-agent
