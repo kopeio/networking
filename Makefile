@@ -1,4 +1,3 @@
-# TODO: Move entirely to bazel?
 .PHONY: images
 
 DOCKER_REGISTRY?=$(shell whoami)
