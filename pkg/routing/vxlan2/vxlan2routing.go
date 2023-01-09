@@ -30,17 +30,24 @@ type VxlanRoutingProvider struct {
 
 var _ routing.Provider = &VxlanRoutingProvider{}
 
-func NewVxlanRoutingProvider(overlayCIDR *net.IPNet, deviceName string) (*VxlanRoutingProvider, error) {
-	underlyingLink, err := netlink.LinkByName(deviceName)
-	if err != nil {
-		return nil, fmt.Errorf("error fetching target link %q: %v", deviceName, err)
-	}
-	if underlyingLink == nil {
-		return nil, fmt.Errorf("target link not found %q", deviceName)
-	}
+func NewVxlanRoutingProvider(overlayCIDR *net.IPNet, deviceNames []string) (*VxlanRoutingProvider, error) {
+	minMTU := 0
 
-	mtu := underlyingLink.Attrs().MTU - 100
-	klog.Warningf("MTU hard-coded to underlying interface %s MTU - 100 = %d", deviceName, mtu)
+	for _, deviceName := range deviceNames {
+		underlyingLink, err := netlink.LinkByName(deviceName)
+		if err != nil {
+			return nil, fmt.Errorf("error fetching target link %q: %v", deviceName, err)
+		}
+		if underlyingLink == nil {
+			return nil, fmt.Errorf("target link not found %q", deviceName)
+		}
+
+		mtu := underlyingLink.Attrs().MTU
+		if minMTU == 0 || mtu < minMTU {
+			minMTU = mtu
+		}
+		klog.Infof("link %q has mtu %d", deviceName, mtu)
+	}
 
 	p := &VxlanRoutingProvider{
 		overlayCIDR: overlayCIDR,
@@ -49,8 +56,9 @@ func NewVxlanRoutingProvider(overlayCIDR *net.IPNet, deviceName string) (*VxlanR
 		vtepIndex: 0,
 		vxlanPort: 4789,
 
-		mtu: mtu,
+		mtu: minMTU - 100,
 	}
+	klog.Warningf("MTU hard-coded to min MTU - 100 = %d", p.mtu)
 
 	return p, nil
 }
