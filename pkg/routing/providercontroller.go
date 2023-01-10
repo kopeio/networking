@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -71,9 +71,9 @@ func (c *Controller) runWatcher(ctx context.Context) {
 			nodeName := c.nodeMap.me.Name
 			klog.Infof("marking node %q as network-ready in node status", nodeName)
 			currentTime := metav1.Now()
-			err = setNodeCondition(ctx, c.kubeClient, nodeName, v1.NodeCondition{
-				Type:               v1.NodeNetworkUnavailable,
-				Status:             v1.ConditionFalse,
+			err = setNodeCondition(ctx, c.kubeClient, nodeName, corev1.NodeCondition{
+				Type:               corev1.NodeNetworkUnavailable,
+				Status:             corev1.ConditionFalse,
 				Reason:             "RouteCreated",
 				Message:            "kope.io network controller initialized node routes",
 				LastTransitionTime: currentTime,
@@ -93,11 +93,11 @@ func (c *Controller) runWatcher(ctx context.Context) {
 // Borrowed from k8s.io/kubernetes/pkg/util/node/node.go
 
 // SetNodeCondition updates specific node condition with patch operation.
-func setNodeCondition(ctx context.Context, c kubernetes.Interface, node string, condition v1.NodeCondition) error {
+func setNodeCondition(ctx context.Context, c kubernetes.Interface, node string, condition corev1.NodeCondition) error {
 	condition.LastHeartbeatTime = metav1.NewTime(time.Now())
 	patch, err := json.Marshal(map[string]interface{}{
 		"status": map[string]interface{}{
-			"conditions": []v1.NodeCondition{condition},
+			"conditions": []corev1.NodeCondition{condition},
 		},
 	})
 	if err != nil {
