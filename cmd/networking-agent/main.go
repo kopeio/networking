@@ -27,7 +27,6 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
-	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -58,6 +57,9 @@ func main() {
 }
 
 func run(ctx context.Context) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	gitVersion := networking.GitVersion
 	if gitVersion != "" {
 		if len(gitVersion) > 6 {
@@ -273,10 +275,21 @@ func run(ctx context.Context) error {
 	}
 	go rc.Run(ctx)
 	//go registerHandlers(c)
-	go handleSigterm(c)
+
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
 
 	for {
-		time.Sleep(30 * time.Second)
+		select {
+		case <-ctx.Done():
+			err := ctx.Err()
+			klog.Infof("exiting: %v", err)
+			os.Exit(0)
+
+		case sig := <-signalChan:
+			klog.Infof("got signal %s, exiting", sig.String())
+			cancel()
+		}
 	}
 }
 
@@ -306,21 +319,6 @@ func run(ctx context.Context) error {
 //	}
 //	klog.Fatal(server.ListenAndServe())
 //}
-
-func handleSigterm(c *watchers.NodeController) {
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGTERM)
-	<-signalChan
-	klog.Infof("Received SIGTERM, shutting down")
-
-	exitCode := 0
-	if err := c.Stop(); err != nil {
-		klog.Infof("Error during shutdown %v", err)
-		exitCode = 1
-	}
-	klog.Infof("Exiting with %v", exitCode)
-	os.Exit(exitCode)
-}
 
 // findTargetLinks attempts to discover the correct network interface(s)
 func findTargetLinks() ([]string, error) {

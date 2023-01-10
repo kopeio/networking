@@ -11,12 +11,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 	"kope.io/networking/pkg/routing"
-	"kope.io/networking/pkg/util"
 )
 
 // NodeController watches for nodes
 type NodeController struct {
-	util.Stoppable
 	kubeClient kubernetes.Interface
 	nodeMap    *routing.NodeMap
 }
@@ -35,14 +33,12 @@ func NewNodeController(kubeClient kubernetes.Interface, nodeMap *routing.NodeMap
 func (c *NodeController) Run(ctx context.Context) {
 	klog.Infof("starting node controller")
 
-	stopCh := c.StopChannel()
-	go c.runWatcher(ctx, stopCh)
+	c.runWatcher(ctx)
 
-	<-stopCh
-	klog.Infof("shutting down node controller")
+	klog.Infof("exiting node controller")
 }
 
-func (c *NodeController) runWatcher(ctx context.Context, stopCh <-chan struct{}) {
+func (c *NodeController) runWatcher(ctx context.Context) {
 	runOnce := func() (bool, error) {
 		var listOpts metav1.ListOptions
 
@@ -52,7 +48,7 @@ func (c *NodeController) runWatcher(ctx context.Context, stopCh <-chan struct{})
 
 		nodeList, err := c.kubeClient.CoreV1().Nodes().List(ctx, listOpts)
 		if err != nil {
-			return false, fmt.Errorf("error listing nodes: %v", err)
+			return false, fmt.Errorf("error listing nodes: %w", err)
 		}
 		c.nodeMap.ReplaceAllNodes(nodeList.Items)
 		c.nodeMap.MarkReady()
@@ -70,9 +66,9 @@ func (c *NodeController) runWatcher(ctx context.Context, stopCh <-chan struct{})
 		ch := watcher.ResultChan()
 		for {
 			select {
-			case <-stopCh:
+			case <-ctx.Done():
 				klog.Infof("Got stop signal")
-				return true, nil
+				return true, ctx.Err()
 			case event, ok := <-ch:
 				if !ok {
 					klog.Infof("node watch channel closed")

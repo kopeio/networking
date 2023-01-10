@@ -8,13 +8,11 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
-	"kope.io/networking/pkg/util"
 )
 
 type NodePredicate func(node *corev1.Node) bool
 
 type NodeMap struct {
-	util.Stoppable
 	mePredicate NodePredicate
 
 	mutex   sync.Mutex

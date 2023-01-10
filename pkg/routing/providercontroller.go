@@ -34,13 +34,13 @@ func NewController(kubeClient kubernetes.Interface, nodeMap *NodeMap, provider P
 }
 
 // Run starts the NodeController.
-func (c *Controller) Run(ctx context.Context) {
+func (c *Controller) Run(ctx context.Context) error {
 	klog.Infof("starting node controller")
 
-	go c.runWatcher(ctx)
+	return c.runWatcher(ctx)
 }
 
-func (c *Controller) runWatcher(ctx context.Context) {
+func (c *Controller) runWatcher(ctx context.Context) error {
 	for {
 		if c.nodeMap.IsReady() {
 			break
@@ -50,6 +50,11 @@ func (c *Controller) runWatcher(ctx context.Context) {
 	}
 	klog.Infof("node map is ready")
 	for {
+		if err := ctx.Err(); err != nil {
+			klog.Infof("exiting routing controller: %v", err)
+			return err
+		}
+
 		err := c.provider.EnsureCIDRs(c.nodeMap)
 		if err != nil {
 			klog.Warningf("Unexpected error in provider controller, will retry: %v", err)
