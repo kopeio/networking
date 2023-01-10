@@ -57,16 +57,15 @@ func (c *NodeController) runWatcher(ctx context.Context, stopCh <-chan struct{})
 		c.nodeMap.ReplaceAllNodes(nodeList.Items)
 		c.nodeMap.MarkReady()
 
-		//listOpts.LabelSelector = labels.Everything()
-		//listOpts.FieldSelector = fields.Everything()
-
 		listOpts.Watch = true
 		listOpts.ResourceVersion = nodeList.ResourceVersion
-		klog.Infof("doing node watch from %s", listOpts.ResourceVersion)
+		klog.Infof("starting node watch from %s", listOpts.ResourceVersion)
 		watcher, err := c.kubeClient.CoreV1().Nodes().Watch(ctx, listOpts)
 		if err != nil {
-			return false, fmt.Errorf("error watching nodes: %v", err)
+			return false, fmt.Errorf("error watching nodes: %w", err)
 		}
+		defer watcher.Stop()
+
 		ch := watcher.ResultChan()
 		for {
 			select {
@@ -79,7 +78,11 @@ func (c *NodeController) runWatcher(ctx context.Context, stopCh <-chan struct{})
 					return false, nil
 				}
 
-				node := event.Object.(*corev1.Node)
+				node, ok := event.Object.(*corev1.Node)
+				if !ok {
+					klog.Warningf("unexpected event:  type=%q, object=%T:%+v", event.Type, event.Object)
+					return false, fmt.Errorf("object had unexpected type %T", event.Object)
+				}
 				klog.V(4).Infof("node changed: %s %v", event.Type, node.Name)
 
 				switch event.Type {
