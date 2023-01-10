@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
@@ -44,7 +44,7 @@ func (c *NodeController) Run(ctx context.Context) {
 
 func (c *NodeController) runWatcher(ctx context.Context, stopCh <-chan struct{}) {
 	runOnce := func() (bool, error) {
-		var listOpts meta_v1.ListOptions
+		var listOpts metav1.ListOptions
 
 		// We need to watch all the nodes
 		//listOpts.LabelSelector = labels.Everything()
@@ -79,7 +79,7 @@ func (c *NodeController) runWatcher(ctx context.Context, stopCh <-chan struct{})
 					return false, nil
 				}
 
-				node := event.Object.(*v1.Node)
+				node := event.Object.(*corev1.Node)
 				klog.V(4).Infof("node changed: %s %v", event.Type, node.Name)
 
 				switch event.Type {

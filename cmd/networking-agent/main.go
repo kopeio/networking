@@ -29,7 +29,7 @@ import (
 	"syscall"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
@@ -97,11 +97,11 @@ func run(ctx context.Context) error {
 		return fmt.Errorf("error building REST client: %v", err)
 	}
 
-	var matcher func(node *v1.Node) bool
+	var matcher func(node *corev1.Node) bool
 	if nodeName := os.Getenv("NODE_NAME"); nodeName != "" {
 		// Passing NODE_NAME via downward API is preferred
 		klog.Infof("will match node on name=%q", nodeName)
-		matcher = func(node *v1.Node) bool {
+		matcher = func(node *corev1.Node) bool {
 			return node.Name == nodeName
 		}
 	} else if options.MachineIDPath != "" {
@@ -115,7 +115,7 @@ func run(ctx context.Context) error {
 		machineID = strings.TrimSpace(machineID)
 
 		klog.Infof("will match node on machineid=%q", machineID)
-		matcher = func(node *v1.Node) bool {
+		matcher = func(node *corev1.Node) bool {
 			return node.Status.NodeInfo.MachineID == machineID
 		}
 	} else if options.SystemUUIDPath != "" {
@@ -134,7 +134,7 @@ func run(ctx context.Context) error {
 		}
 
 		klog.Infof("will match node on systemUUID=%q", systemUUID)
-		matcher = func(node *v1.Node) bool {
+		matcher = func(node *corev1.Node) bool {
 			return node.Status.NodeInfo.SystemUUID == systemUUID
 		}
 	} else if options.BootIDPath != "" {
@@ -148,7 +148,7 @@ func run(ctx context.Context) error {
 		bootID = strings.TrimSpace(bootID)
 
 		klog.Infof("will match node on bootID=%q", bootID)
-		matcher = func(node *v1.Node) bool {
+		matcher = func(node *corev1.Node) bool {
 			return node.Status.NodeInfo.BootID == bootID
 		}
 	} else {
@@ -164,7 +164,7 @@ func run(ctx context.Context) error {
 			matchNodeName = hostname
 		}
 		klog.Infof("will match node on name=%q", matchNodeName)
-		matcher = func(node *v1.Node) bool {
+		matcher = func(node *corev1.Node) bool {
 			return node.Name == matchNodeName
 		}
 	}

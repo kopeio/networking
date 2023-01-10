@@ -6,12 +6,12 @@ import (
 	"sort"
 	"sync"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
 	"kope.io/networking/pkg/util"
 )
 
-type NodePredicate func(node *v1.Node) bool
+type NodePredicate func(node *corev1.Node) bool
 
 type NodeMap struct {
 	util.Stoppable
@@ -64,7 +64,7 @@ func (m *NodeMap) MarkReady() {
 	m.ready = true
 }
 
-func (m *NodeMap) RemoveNode(node *v1.Node) {
+func (m *NodeMap) RemoveNode(node *corev1.Node) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -78,7 +78,7 @@ func (m *NodeMap) removeNode(nodeName string) {
 	m.version++
 }
 
-func (m *NodeMap) UpdateNode(src *v1.Node) bool {
+func (m *NodeMap) UpdateNode(src *corev1.Node) bool {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -87,7 +87,7 @@ func (m *NodeMap) UpdateNode(src *v1.Node) bool {
 
 // updateNode updates the internal state for a particular node
 // It assumes the mutex is held
-func (m *NodeMap) updateNode(src *v1.Node) bool {
+func (m *NodeMap) updateNode(src *corev1.Node) bool {
 	changed := false
 	name := src.Name
 
@@ -119,7 +119,7 @@ func (m *NodeMap) updateNode(src *v1.Node) bool {
 
 // ReplaceAllNodes takes a list of all nodes, and replaces the existing map with it
 // Nodes not in the list will be removed
-func (m *NodeMap) ReplaceAllNodes(nodes []v1.Node) bool {
+func (m *NodeMap) ReplaceAllNodes(nodes []corev1.Node) bool {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -161,7 +161,7 @@ type NodeInfo struct {
 	NetworkAvailable bool
 }
 
-func (n *NodeInfo) update(src *v1.Node) bool {
+func (n *NodeInfo) update(src *corev1.Node) bool {
 	changed := false
 
 	name := src.Name
@@ -192,7 +192,7 @@ func (n *NodeInfo) update(src *v1.Node) bool {
 	var internalIPs []string
 	for i := range src.Status.Addresses {
 		address := &src.Status.Addresses[i]
-		if address.Type == v1.NodeInternalIP {
+		if address.Type == corev1.NodeInternalIP {
 			internalIPs = append(internalIPs, address.Address)
 		}
 	}
@@ -225,15 +225,15 @@ func (n *NodeInfo) update(src *v1.Node) bool {
 	{
 		networkAvailable := true
 		for _, condition := range src.Status.Conditions {
-			if condition.Type == v1.NodeNetworkUnavailable {
+			if condition.Type == corev1.NodeNetworkUnavailable {
 				switch condition.Status {
-				case v1.ConditionFalse:
+				case corev1.ConditionFalse:
 					// Double negative: Not unavailable
 					networkAvailable = true
-				case v1.ConditionTrue:
+				case corev1.ConditionTrue:
 					// It is true that it is unavailable => available=false
 					networkAvailable = false
-				case v1.ConditionUnknown:
+				case corev1.ConditionUnknown:
 					klog.V(2).Infof("NodeNetworkAvailable status was ConditionUnknown - assuming available")
 				default:
 					klog.Warningf("NodeNetworkAvailable status was %q - assuming available", condition.Status)
