@@ -3,8 +3,6 @@
 IMAGE_REPO?=$(shell whoami)
 IMAGE_TAG?=latest
 
-IMG ?= ${DOCKER_REGISTRY}/networking-agent:${DOCKER_TAG}
-
 all:
 	go build ./...
 	go test ./...
