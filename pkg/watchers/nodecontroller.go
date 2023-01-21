@@ -46,6 +46,8 @@ func (c *NodeController) runWatcher(ctx context.Context) {
 		//listOpts.LabelSelector = labels.Everything()
 		//listOpts.FieldSelector = fields.Everything()
 
+		listOpts.AllowWatchBookmarks = true
+
 		nodeList, err := c.kubeClient.CoreV1().Nodes().List(ctx, listOpts)
 		if err != nil {
 			return false, fmt.Errorf("error listing nodes: %w", err)
@@ -74,9 +76,19 @@ func (c *NodeController) runWatcher(ctx context.Context) {
 					return false, nil
 				}
 
+				if event.Type == watch.Error {
+					klog.Infof("error event on watch: %v", event.Object)
+					return false, fmt.Errorf("error from watch: %v", event.Object)
+				}
+
+				if event.Type == watch.Bookmark {
+					klog.V(4).Infof("ignoring watch bookmark event: %v", event.Object)
+					continue
+				}
+
 				node, ok := event.Object.(*corev1.Node)
 				if !ok {
-					klog.Warningf("unexpected event:  type=%q, object=%T:%+v", event.Type, event.Object)
+					klog.Warningf("unexpected event:  type=%q, object=%T:%+v", event.Type, event.Object, event.Object)
 					return false, fmt.Errorf("object had unexpected type %T", event.Object)
 				}
 				klog.V(4).Infof("node changed: %s %v", event.Type, node.Name)
@@ -102,7 +114,7 @@ func (c *NodeController) runWatcher(ctx context.Context) {
 		}
 
 		if err != nil {
-			klog.Warningf("Unexpected error in node watch, will retry: %v", err)
+			klog.Warningf("Unexpected error in node watch, will restart watch: %v", err)
 			time.Sleep(10 * time.Second)
 		}
 	}
