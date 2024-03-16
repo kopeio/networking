@@ -1,6 +1,8 @@
 module kope.io/networking
 
-go 1.18
+go 1.22
+
+toolchain go1.22.1
 
 require (
 	github.com/vishvananda/netlink v1.1.0
