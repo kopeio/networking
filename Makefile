@@ -14,7 +14,7 @@ goimports:
 	goimports -w cmd/ pkg/
 
 push:
-	KO_DOCKER_REPO=${IMAGE_REPO} go run github.com/google/ko@v0.12.0 build -B --tags=${IMAGE_TAG} ./cmd/networking-agent
+	KO_DOCKER_REPO=${IMAGE_REPO} go run github.com/google/ko@v0.15.2 build -B --tags=${IMAGE_TAG} ./cmd/networking-agent
 
 bounce:
 	kubectl delete pod -n kube-system -l name=kopeio-networking-agent
