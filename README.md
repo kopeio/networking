@@ -1,3 +1,5 @@
+## *ARCHIVED*: https://github.com/kubernetes-sigs/kindnet is a good implementation of the same ideas, and is an official Kubernetes project
+
 # Simple Networking Provider for Kubernetes
 
 **Status: Moving from experimental to alpha.**
